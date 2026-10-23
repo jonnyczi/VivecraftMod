@@ -12,14 +12,14 @@ ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
 LD=/run/opengl-driver/lib
 for p in libx11 libxcursor libxrandr libxi libxxf86vm libxext libxrender libpulseaudio alsa-lib wayland \
     libxkbcommon vulkan-loader systemdLibs libGL; do
-    LD="$LD:$(nix build --no-link --print-out-paths "nixpkgs#$p" | head -1)/lib"
+    LD="$LD:$(nix build --no-link --print-out-paths "nixpkgs#$p" | sed -n 1p)/lib"
 done
 export LD_LIBRARY_PATH=$LD
 
 # isolated X server
 mkdir -p "$ROOT/build"
 if ! [ -e "/tmp/.X11-unix/X${DISP#:}" ]; then
-    XVFB=$(nix build --no-link --print-out-paths nixpkgs#xvfb | head -1)
+    XVFB=$(nix build --no-link --print-out-paths nixpkgs#xvfb | sed -n 1p)
     "$XVFB/bin/Xvfb" "$DISP" -screen 0 "$SIZE" +extension GLX -nolisten tcp >"$ROOT/build/xvfb.log" 2>&1 &
     for _ in $(seq 50); do [ -e "/tmp/.X11-unix/X${DISP#:}" ] && break; sleep 0.1; done
 fi
