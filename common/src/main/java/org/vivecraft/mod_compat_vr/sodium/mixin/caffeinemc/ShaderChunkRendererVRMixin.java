@@ -16,6 +16,8 @@ public class ShaderChunkRendererVRMixin {
 
     @ModifyExpressionValue(method = "createShader", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/pipeline/RenderPipeline;builder([Lcom/mojang/blaze3d/pipeline/RenderPipeline$Snippet;)Lcom/mojang/blaze3d/pipeline/RenderPipeline$Builder;"))
     private RenderPipeline.Builder vivecraft$addTabletopClip(RenderPipeline.Builder builder) {
-        return builder.withBindGroupLayout(SodiumTabletopClip.CLIP_BIND_GROUP);
+        // only when the shaders got the clip box
+        return SodiumTabletopClip.isPatched() ? builder.withBindGroupLayout(SodiumTabletopClip.CLIP_BIND_GROUP) :
+            builder;
     }
 }
