@@ -31,6 +31,7 @@ import org.vivecraft.client_vr.gameplay.screenhandlers.GuiHandler;
 import org.vivecraft.client_vr.gameplay.screenhandlers.KeyboardHandler;
 import org.vivecraft.client_vr.gameplay.screenhandlers.RadialHandler;
 import org.vivecraft.client_vr.gui.PhysicalKeyboard;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.render.helpers.DebugRenderHelper;
 import org.vivecraft.client_vr.render.helpers.VRArmHelper;
 import org.vivecraft.client_vr.render.helpers.VREffectsHelper;
@@ -117,12 +118,18 @@ public class VRRenderState {
             Vec3 cameraPos = worldData.getEye(this.currentPass).getPosition();
             Pair<BlockState, BlockPos> block = VREffectsHelper.getNearOpaqueBlock(cameraPos, 0.02);
 
-            this.inBlock = block != null &&
-                !Xevents.INSTANCE.renderBlockOverlay(player, new PoseStack(), block.getLeft(), block.getRight(),
-                    submitNodeStorage);
-            this.inWater =
-                player.isEyeInFluid(FluidTags.WATER) &&
-                    !Xevents.INSTANCE.renderWaterOverlay(player, new PoseStack(), submitNodeStorage);
+            if (TabletopManager.isActive()) {
+                // only the blocks inside the tabletop are there, and the player's eyes are not where the camera is
+                this.inBlock = block != null &&
+                    dataHolder.tabletop.getClipBox().contains(cameraPos);
+            } else {
+                this.inBlock = block != null &&
+                    !Xevents.INSTANCE.renderBlockOverlay(player, new PoseStack(), block.getLeft(), block.getRight(),
+                        submitNodeStorage);
+                this.inWater =
+                    player.isEyeInFluid(FluidTags.WATER) &&
+                        !Xevents.INSTANCE.renderWaterOverlay(player, new PoseStack(), submitNodeStorage);
+            }
         }
 
         DebugRenderHelper.extractDebug(partialTick);

@@ -226,7 +226,8 @@ public class VRInputAction {
 
         // iterate over all actions, and check if another action has a higher priority
         for (VRInputAction action : MCOpenVR.get().getInputActions()) {
-            if (action != this && action.isEnabledRaw(hand) && action.isActive() &&
+            // an unknown origin (0) can't be shared with another action
+            if (lastOrigin != 0L && action != this && action.isEnabledRaw(hand) && action.isActive() &&
                 action.getPriority() > this.getPriority() && MCVR.get().getOrigins(action).contains(lastOrigin))
             {
                 if (action.isHanded()) {

@@ -71,6 +71,33 @@ public class TabletopClientGameTest implements FabricClientGameTest {
 
             VRScreenshot.takeLeftEye(context, "tabletop_sky");
 
+            // the frame above the head and in front: the head is far below the ground of the tabletop, but outside of
+            // it, so the world should be visible, not the black overlay for a head inside a block
+            context.runOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.setFrame(
+                new TabletopFrame(new Vector3f(0F, 2.2F, -1.5F), 0F, 1F, 1F, 0.5F, 0.15F)));
+            context.waitTicks(5);
+            VRScreenshot.EyeImage outside = VRScreenshot.takeLeftEye(context, "tabletop_head_below_outside");
+            LOGGER.info("Vivecraft gametest: head below the tabletop, outside of it, {}% black",
+                Math.round(outside.blackFraction() * 100));
+            check(outside.blackFraction() < 0.5,
+                "a head below the tabletop ground, but outside the tabletop, should not be blacked out, " +
+                    Math.round(outside.blackFraction() * 100) + "% black");
+
+            // the frame around the head: the head is inside the ground of the tabletop, so it is blacked out like in VR
+            context.runOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.setFrame(
+                new TabletopFrame(new Vector3f(0F, 1.8F, 0F), 0F, 1F, 1F, 0.5F, 0.5F)));
+            context.waitTicks(5);
+            VRScreenshot.EyeImage inside = VRScreenshot.takeLeftEye(context, "tabletop_head_inside");
+            LOGGER.info("Vivecraft gametest: head inside the tabletop ground, {}% black",
+                Math.round(inside.blackFraction() * 100));
+            check(inside.blackFraction() > 0.9,
+                "a head inside the tabletop ground should be blacked out, " +
+                    Math.round(inside.blackFraction() * 100) + "% black");
+
+            context.runOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.setFrame(
+                new TabletopFrame(FRAME_CENTER, 0F, 1F, 1F, 0.5F, 0.15F)));
+            context.waitTicks(5);
+
             context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.renderTransparentBackground = true);
             VRScreenshot.takeLeftEye(context, "tabletop_passthrough");
 

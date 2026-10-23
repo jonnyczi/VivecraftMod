@@ -30,8 +30,19 @@ public class VRScreenshot {
      * @param transparentPixels  number of pixels with alpha 0
      * @param glowingPixels      number of pixels with alpha 0 but a color, those would add light over the passthrough
      * @param topCenterAlpha     alpha of the pixel at the top center, which is usually sky
+     * @param blackPixels        number of opaque black pixels, like the overlay when the head is inside a block
+     * @param totalPixels        number of pixels in the image
      */
-    public record EyeImage(Path path, int transparentPixels, int glowingPixels, int topCenterAlpha) {}
+    public record EyeImage(Path path, int transparentPixels, int glowingPixels, int topCenterAlpha, int blackPixels,
+                           int totalPixels)
+    {
+        /**
+         * @return how much of the image is opaque black, from 0 to 1
+         */
+        public double blackFraction() {
+            return (double) this.blackPixels / this.totalPixels;
+        }
+    }
 
     /**
      * saves the left eye image as {@code screenshots/vr_<name>_rgba.png}, and a copy where transparent parts are
@@ -68,11 +79,15 @@ public class VRScreenshot {
             {
                 int transparent = 0;
                 int glowing = 0;
+                int black = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         int abgr = read.data().getInt((x + y * width) * pixelSize);
                         int row = bottomUp ? height - y - 1 : y;
                         rgba.setPixelABGR(x, row, abgr);
+                        if ((abgr >>> 24) == 0xFF && (abgr & 0xF8F8F8) == 0) {
+                            black++;
+                        }
                         if ((abgr >>> 24) == 0) {
                             transparent++;
                             if ((abgr & 0xFFFFFF) != 0) {
@@ -88,7 +103,8 @@ public class VRScreenshot {
                 Path checkerPath = dir.resolve("vr_" + name + ".png");
                 checker.writeToFile(checkerPath);
                 int topCenterAlpha = (rgba.getPixel(width / 2, 0) >>> 24) & 0xFF;
-                result.complete(new EyeImage(checkerPath, transparent, glowing, topCenterAlpha));
+                result.complete(
+                    new EyeImage(checkerPath, transparent, glowing, topCenterAlpha, black, width * height));
             } catch (IOException e) {
                 result.completeExceptionally(new UncheckedIOException(e));
             } catch (Throwable t) {
