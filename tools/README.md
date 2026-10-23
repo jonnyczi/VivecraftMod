@@ -34,6 +34,19 @@ The laptop's firewall is off (`networking.firewall.enable = false` in the NixOS 
 25565 to `networking.firewall.allowedTCPPorts`, or open it until the firewall restarts with
 `sudo nixos-firewall-tool open tcp 25565`.
 
+## Steam Frame release (`steam-frame/`)
+
+An installer for other Steam Frame owners, published as a GitHub release of the fork, so they don't need this
+repository. It is run in desktop mode on the Frame and installs everything into `~/.local/share/minecraft-tabletop`,
+with its own Prism Launcher: Fabric, Fabric API and Sodium from their official sources, the headset jar from the
+release, the Frame settings and a Steam shortcut. Prism opens once for the Microsoft login.
+
+- `steam-frame/make-release.sh <version>` builds the release files in `build/steam-frame-release`: the headset jar from
+  the committed `tabletop-openxr` branch, `install-steam-frame.sh` with all versions and checksums filled in, the
+  `Install Minecraft Tabletop.desktop` file that players double click, the icon and the release notes.
+- `steam-frame/install.sh` is the installer template. For testing it reads `INSTALL_DIR`, `SHORTCUT_NAME`, `ASSET_DIR`
+  (local release files instead of the release page), `NO_SHORTCUT=1` and `NO_LOGIN=1`.
+
 ## Headset builds (`openxr/`)
 
 The Steam Frame needs fayer3's OpenXR provider, which isn't merged yet. The `tabletop-openxr` branch is
