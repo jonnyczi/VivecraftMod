@@ -42,6 +42,7 @@ import org.vivecraft.client_vr.gui.keyboard.KeyboardTheme;
 import org.vivecraft.client_vr.provider.ControllerTransform;
 import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.render.VRShaders;
+import org.vivecraft.client_vr.tabletop.ViewMode;
 import org.vivecraft.common.utils.math.AngleOrder;
 import org.vivecraft.mod_compat_vr.shaders.ShadersHelper;
 
@@ -280,6 +281,16 @@ public class VRSettings {
     public AimDevice aimDevice = AimDevice.CONTROLLER;
     @SettingField(value = VrOptions.WORLD_SCALE)
     public float worldScale = 1.0f;
+    @SettingField(VrOptions.VIEW_MODE)
+    public ViewMode viewMode = ViewMode.VR;
+    @SettingField(VrOptions.TABLETOP_BLOCKS_PER_METER)
+    public float tabletopBlocksPerMeter = 40F;
+    @SettingField(VrOptions.TABLETOP_FRAME_SIZE)
+    public float tabletopFrameSize = 1.0F;
+    @SettingField(VrOptions.TABLETOP_PASSTHROUGH)
+    public boolean tabletopPassthrough = true;
+    @SettingField(VrOptions.TABLETOP_REACH)
+    public float tabletopReach = 64.0F;
     @SettingField(value = VrOptions.WORLD_ROTATION)
     public float worldRotation = 0f;
     public float worldRotationCached;
@@ -544,6 +555,10 @@ public class VRSettings {
     public String gameplayTrackerToRender = "";
     @SettingField(VrOptions.RENDER_DEBUG_ALL_PASSES)
     public boolean renderAllPasses = false;
+    @SettingField(VrOptions.RENDER_DEBUG_TRANSPARENT_BACKGROUND)
+    public boolean renderTransparentBackground = false;
+    @SettingField(VrOptions.RENDER_DEBUG_ALPHA_CHECKERBOARD)
+    public boolean renderAlphaCheckerboard = false;
 
     // other debug settings
     @SettingField(VrOptions.CONTROLLER_TRANSFORM)
@@ -2543,6 +2558,13 @@ public class VRSettings {
                 }
             }
         },
+        VIEW_MODE, // life size VR or tabletop
+        TABLETOP_BLOCKS_PER_METER(10F, 200F, 5F, 0), // how many blocks fit in one meter in tabletop mode
+        TABLETOP_FRAME_SIZE(0.4F, 2.0F, 0.1F, 1), // size of the tabletop frame in meters
+        TABLETOP_PASSTHROUGH(OptionType.BOOLEAN), // show the real room around the table, if the headset supports it
+        TABLETOP_REACH(0.0F, 256.0F, 8.0F, 0), // extra reach in blocks around the player in tabletop mode, the server can limit it
+        RENDER_DEBUG_TRANSPARENT_BACKGROUND(OptionType.BOOLEAN), // renders the world without a sky and shows passthrough if supported
+        RENDER_DEBUG_ALPHA_CHECKERBOARD(OptionType.BOOLEAN), // shows transparent parts of the eye images as a checkerboard on the mirror
         RENDER_DEBUG_HEAD_HITBOX(OptionType.BOOLEAN), // renders entities head hit boxes
         RENDER_DEBUG_DEVICE_AXES(OptionType.BOOLEAN), // renders axes for the local devices
         RENDER_DEBUG_PLAYER_AXES(OptionType.BOOLEAN), // renders axes for all client vr players

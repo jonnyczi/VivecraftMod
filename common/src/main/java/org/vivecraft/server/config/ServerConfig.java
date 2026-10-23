@@ -16,6 +16,7 @@ import org.vivecraft.client.utils.UpdateChecker;
 import org.vivecraft.common.network.packet.s2c.AttackWhileBlockingPayloadS2C;
 import org.vivecraft.common.network.packet.s2c.CrawlPayloadS2C;
 import org.vivecraft.common.network.packet.s2c.DualWieldingPayloadS2C;
+import org.vivecraft.common.network.packet.s2c.TabletopPayloadS2C;
 import org.vivecraft.common.network.packet.s2c.TeleportPayloadS2C;
 import org.vivecraft.server.ServerNetworking;
 import org.vivecraft.server.config.enums.ClimbeyBlockmode;
@@ -73,6 +74,9 @@ public class ServerConfig {
     public static ConfigBuilder.IntValue ROOMSCALE_SHIELD_COOLDOWN;
     public static ConfigBuilder.DoubleValue ROOMSCALE_SHIELD_COOLDOWN_DAMAGE_TRIGGER;
     public static ConfigBuilder.BooleanValue ALLOW_ATTACKS_WHILE_BLOCKING;
+    public static ConfigBuilder.BooleanValue TABLETOP_ALLOWED;
+    public static ConfigBuilder.DoubleValue TABLETOP_MAX_REACH;
+    public static ConfigBuilder.BooleanValue TABLETOP_DROPS_TO_INVENTORY;
     // bow
     public static ConfigBuilder.DoubleValue BOW_STANDING_MULTIPLIER;
     public static ConfigBuilder.DoubleValue BOW_SEATED_MULTIPLIER;
@@ -123,6 +127,13 @@ public class ServerConfig {
 
     public static List<ConfigBuilder.ConfigValue> getConfigValues() {
         return BUILDER.getConfigValues();
+    }
+
+    /**
+     * @return payload that tells clients if they get extra reach in tabletop mode
+     */
+    public static TabletopPayloadS2C getTabletopPayload() {
+        return new TabletopPayloadS2C(TABLETOP_ALLOWED.get(), TABLETOP_MAX_REACH.get().floatValue());
     }
 
     public static void init(ConfigSpec.CorrectionListener listener) {
@@ -313,6 +324,17 @@ public class ServerConfig {
             .push("allowAttacksWhileBlocking")
             .define(true)
             .setPacketFunction(v -> new AttackWhileBlockingPayloadS2C(ALLOW_ATTACKS_WHILE_BLOCKING.get()));
+        TABLETOP_ALLOWED = BUILDER
+            .push("tabletopAllowed")
+            .define(true)
+            .setPacketFunction(v -> getTabletopPayload());
+        TABLETOP_MAX_REACH = BUILDER
+            .push("tabletopMaxReach")
+            .defineInRange(128.0, 0.0, 512.0)
+            .setPacketFunction(v -> getTabletopPayload());
+        TABLETOP_DROPS_TO_INVENTORY = BUILDER
+            .push("tabletopDropsToInventory")
+            .define(true);
 
         BUILDER
             .push("bow");

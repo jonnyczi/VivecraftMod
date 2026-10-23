@@ -37,6 +37,9 @@ public class NullVR extends MCVR<InputAction> {
 
     private boolean vrActive = true;
 
+    // there is no real passthrough, but this allows testing the transparent background on the desktop mirror
+    private boolean passthroughActive = false;
+
     protected static final int HEAD_TRACKER = CAMERA_TRACKER;
 
     protected boolean polled;
@@ -306,9 +309,36 @@ public class NullVR extends MCVR<InputAction> {
         return true;
     }
 
+    /**
+     * places a device in the room, like moving it with the keyboard, used by automated tests
+     *
+     * @param device   device index, like {@link MCVR#RIGHT_CONTROLLER}
+     * @param position position in room space
+     * @param rotation rotation in room space
+     */
+    public void setDevicePose(int device, Vector3fc position, Quaternionfc rotation) {
+        this.deviceOffsets[device].set(position);
+        this.deviceRotations[device].set(rotation);
+    }
+
     @Override
     public float getIPD() {
         return this.dh.vrSettings.nullvrIPD;
+    }
+
+    @Override
+    public boolean supportsPassthrough() {
+        return true;
+    }
+
+    @Override
+    public boolean isPassthroughActive() {
+        return this.passthroughActive;
+    }
+
+    @Override
+    public void setPassthroughActive(boolean active) {
+        this.passthroughActive = active;
     }
 
     @Override

@@ -44,6 +44,8 @@ import org.vivecraft.client_vr.gameplay.trackers.VehicleTracker;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_vr.utils.external.jinfinadeck;
 import org.vivecraft.client_vr.utils.external.jkatvr;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.math.TabletopMapping;
 import org.vivecraft.common.VRServerPerms;
 import org.vivecraft.common.utils.MathUtils;
 import org.vivecraft.data.ViveItemTags;
@@ -143,6 +145,17 @@ public class VRPlayer {
 
     public void preTick() {
         this.onTick = true;
+
+        this.dh.tabletop.tick();
+        if (TabletopManager.isActive()) {
+            // the room is mapped onto the world with a fixed frame, instead of following the player
+            TabletopMapping mapping = this.dh.tabletop.getMapping();
+            this.roomOrigin = mapping.origin();
+            this.worldScale = mapping.scale();
+            this.vrdata_world_pre = new VRData(mapping.origin(), 1.0F, mapping.scale(), mapping.rotation());
+            return;
+        }
+
         this.vrdata_world_pre = new VRData(
             this.roomOrigin,
             this.dh.vrSettings.walkMultiplier,
@@ -253,6 +266,15 @@ public class VRPlayer {
     }
 
     public void postTick() {
+        if (TabletopManager.isActive()) {
+            TabletopMapping mapping = this.dh.tabletop.getMapping();
+            this.vrdata_room_post = new VRData(Vec3.ZERO, this.dh.vrSettings.walkMultiplier, 1.0F, 0.0F);
+            this.vrdata_world_post = new VRData(mapping.origin(), 1.0F, mapping.scale(), mapping.rotation());
+            ClientNetworking.sendVRPlayerPositions(this);
+            this.onTick = false;
+            return;
+        }
+
         // translational position change due only to scale. - move room to fix entity in place during scale changes.
         Vector3f scaleOffset = this.vrdata_world_pre.hmd.getScalePositionOffset(this.worldScale);
         this.roomOrigin = this.roomOrigin.subtract(scaleOffset.x, scaleOffset.y, scaleOffset.z);
@@ -284,6 +306,39 @@ public class VRPlayer {
     }
 
     public void preRender(float partialTick) {
+        if (TabletopManager.isActive()) {
+            // move the tabletop with the grips before using its mapping for this frame
+            this.dh.tabletop.updateGrab();
+            // no interpolation, so that dragging the world around follows the hands without delay
+            TabletopMapping mapping = this.dh.tabletop.getMapping();
+            this.vrdata_world_render = new VRData(mapping.origin(), 1.0F, mapping.scale(), mapping.rotation());
+        } else {
+            this.interpolateRenderData(partialTick);
+        }
+
+        for (Tracker tracker : ClientDataHolderVR.getInstance().getTrackers()) {
+            if (tracker.processType() == Tracker.ProcessType.PER_FRAME && this.dh.tabletop.isTrackerAllowed(tracker)) {
+                tracker.idleProcess(this.mc.player);
+                if (tracker.isActive(this.mc.player)) {
+                    tracker.activeProcess(this.mc.player);
+                } else {
+                    tracker.inactiveProcess(this.mc.player);
+                }
+            }
+        }
+
+        this.dh.menuHandOff = MethodHolder.isInMenuRoom() || this.mc.gui.screen() != null || KeyboardHandler.SHOWING ||
+            RadialHandler.isShowing() || (this.mc.player != null && this.mc.player.isSpectator());
+        this.dh.menuHandMain = this.dh.menuHandOff ||
+            (this.dh.hotbarModule.hotbar >= 0 && this.dh.vrSettings.vrTouchHotbar);
+    }
+
+    /**
+     * interpolates the world VRData between the last two ticks
+     *
+     * @param partialTick current partial tick
+     */
+    private void interpolateRenderData(float partialTick) {
         // do some interpolatin'
 
         float interpolatedWorldScale = Mth.lerp(partialTick, this.vrdata_world_pre.worldScale,
@@ -312,27 +367,14 @@ public class VRPlayer {
             this.dh.vrSettings.walkMultiplier,
             interpolatedWorldScale,
             interpolatedWorldRotation_Radians);
-
-        for (Tracker tracker : ClientDataHolderVR.getInstance().getTrackers()) {
-            if (tracker.processType() == Tracker.ProcessType.PER_FRAME) {
-                tracker.idleProcess(this.mc.player);
-                if (tracker.isActive(this.mc.player)) {
-                    tracker.activeProcess(this.mc.player);
-                } else {
-                    tracker.inactiveProcess(this.mc.player);
-                }
-            }
-        }
-
-        this.dh.menuHandOff = MethodHolder.isInMenuRoom() || this.mc.gui.screen() != null || KeyboardHandler.SHOWING ||
-            RadialHandler.isShowing() || (this.mc.player != null && this.mc.player.isSpectator());
-        this.dh.menuHandMain = this.dh.menuHandOff ||
-            (this.dh.hotbarModule.hotbar >= 0 && this.dh.vrSettings.vrTouchHotbar);
     }
 
     public void postRender(float partialTick) {}
 
     public void setRoomOrigin(double x, double y, double z, boolean reset) {
+        // in tabletop mode the room origin is fixed to the frame
+        if (TabletopManager.isActive()) return;
+
         if (reset && this.vrdata_world_pre != null) {
             this.vrdata_world_pre.origin = new Vec3(x, y, z);
         }
@@ -342,7 +384,8 @@ public class VRPlayer {
 
     // set room
     public void snapRoomOriginToPlayerEntity(Entity entity, boolean reset, boolean instant) {
-        if (Thread.currentThread().getName().equals("Server thread") ||
+        if (TabletopManager.isActive() ||
+            Thread.currentThread().getName().equals("Server thread") ||
             entity == null || entity.position() == Vec3.ZERO ||
             // avoid relocating the view while roomscale dismounting.
             this.dh.sneakTracker.sneakCounter > 0)
@@ -416,7 +459,7 @@ public class VRPlayer {
 
         this.doPlayerMoveInRoom(player);
         for (Tracker tracker : this.dh.getTrackers()) {
-            if (tracker.processType() == Tracker.ProcessType.PER_TICK) {
+            if (tracker.processType() == Tracker.ProcessType.PER_TICK && this.dh.tabletop.isTrackerAllowed(tracker)) {
                 tracker.idleProcess(player);
                 if (tracker.isActive(player)) {
                     tracker.activeProcess(player);
@@ -426,7 +469,8 @@ public class VRPlayer {
             }
         }
 
-        if (player.isPassenger()) {
+        // in tabletop mode the head doesn't control the mount
+        if (player.isPassenger() && !TabletopManager.isActive()) {
             Entity entity = player.getVehicle();
 
             if (entity instanceof AbstractHorse abstracthorse) {
@@ -451,6 +495,8 @@ public class VRPlayer {
     }
 
     public void doPlayerMoveInRoom(LocalPlayer player) {
+        // in tabletop mode walking around the room doesn't move the avatar
+        if (TabletopManager.isActive()) return;
 
         if (this.roomScaleMovementDelay > 0) {
             this.roomScaleMovementDelay--;

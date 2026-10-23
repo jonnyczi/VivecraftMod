@@ -21,12 +21,16 @@ import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.profiling.Profiler;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import org.joml.Vector4fc;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.vivecraft.client.extensions.LevelRenderStateExtension;
@@ -35,10 +39,15 @@ import org.vivecraft.client_vr.MultiPassTextureTarget;
 import org.vivecraft.client_vr.VRState;
 import org.vivecraft.client_vr.extensions.LevelRendererExtension;
 import org.vivecraft.client_vr.extensions.LevelTargetBundleExtension;
+import org.vivecraft.client_vr.render.helpers.PassthroughHelper;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.render.helpers.VREffectsHelper;
 import org.vivecraft.client_vr.render.renderstates.VRRenderState;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.render.TabletopCutFaces;
+import org.vivecraft.client_vr.tabletop.render.TabletopLaser;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
+import org.vivecraft.common.utils.MathUtils;
 
 import javax.annotation.Nullable;
 import java.util.Set;
@@ -143,12 +152,19 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
     {
         if (RenderPassType.isVanilla()) return;
 
-        Profiler.get().popPush("interact outline");
+        Profiler.get().push("interact outline");
+
+        Vec3 cameraPos = levelRenderState.cameraRenderState.pos;
 
         BlockOutlineRenderState[] outlines = ((LevelRenderStateExtension) levelRenderState).vivecraft$getInteractOutlineStates();
 
         for (int c = 0; c < 2; c++) {
             if (outlines[c] != null) {
+                poseStack.pushPose();
+                poseStack.translate(
+                    outlines[c].pos().getX() - cameraPos.x,
+                    outlines[c].pos().getY() - cameraPos.y,
+                    outlines[c].pos().getZ() - cameraPos.z);
                 this.submitHitOutline(poseStack,
                     output,
                     RenderTypes.lines(),
@@ -156,8 +172,10 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
                     0x66FFFFFF,
                     this.gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth,
                     outlines[c].isTranslucent());
+                poseStack.popPose();
             }
         }
+        Profiler.get().pop();
     }
 
     @Inject(method = "lambda$addMainPass$0*", at = @At(value = "CONSTANT", args = "stringValue=renderSolidFeatures"))
@@ -172,6 +190,21 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
             }
             // no depth copy for unoccluded
         }
+    }
+
+    @Inject(method = "submitFeatures*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))
+    private void vivecraft$submitTabletopCutFaces(
+        CallbackInfo ci, @Local(argsOnly = true) LevelRenderState levelRenderState, @Local PoseStack poseStack)
+    {
+        if (RenderPassType.isVanilla()) return;
+        TabletopCutFaces.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
+        TabletopLaser.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
+    }
+
+    @ModifyArg(method = "submitBlockOutline", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;submitHitOutline(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/rendertype/RenderType;Lnet/minecraft/client/renderer/state/level/BlockOutlineRenderState;IFZ)V", ordinal = 0), index = 5, require = 1)
+    private float vivecraft$thinTabletopOutlineBorder(float width) {
+        // the tabletop blocks are only a few pixels big, so the dark border of the high contrast outline is thinner
+        return TabletopManager.isActive() ? 4.0F : width;
     }
 
     @Inject(method = "submitFeatures*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))
@@ -224,6 +257,24 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
                 LevelTargetBundleExtension.VR_TARGETS);
         } else {
             return original.call(instance, id, externalTargets);
+        }
+    }
+
+    @ModifyVariable(method = "render", at = @At("HEAD"), argsOnly = true, ordinal = 1)
+    private boolean vivecraft$noSkyWithTransparentBackground(boolean shouldRenderSky) {
+        return shouldRenderSky && !PassthroughHelper.hasTransparentBackground();
+    }
+
+    @ModifyArg(method = "lambda$render$0", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/CommandEncoder;clearColorAndDepthTextures(Lcom/mojang/blaze3d/textures/GpuTexture;Lorg/joml/Vector4fc;Lcom/mojang/blaze3d/textures/GpuTexture;D)V"), index = 1)
+    private Vector4fc vivecraft$transparentClearColor(Vector4fc clearColor) {
+        // the background color needs to be black, since the passthrough expects premultiplied alpha
+        return PassthroughHelper.hasTransparentBackground() ? MathUtils.BLACK_TRANSPARENT : clearColor;
+    }
+
+    @Inject(method = {"addCloudsPass", "addWeatherPass"}, at = @At("HEAD"), cancellable = true)
+    private void vivecraft$noSkyEffectsWithTransparentBackground(CallbackInfo ci) {
+        if (PassthroughHelper.hasTransparentBackground()) {
+            ci.cancel();
         }
     }
 

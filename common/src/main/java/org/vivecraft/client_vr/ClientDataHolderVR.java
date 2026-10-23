@@ -17,6 +17,7 @@ import org.vivecraft.client_vr.provider.VRRenderer;
 import org.vivecraft.client_vr.provider.control.InputAction;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +46,7 @@ public class ClientDataHolderVR {
     public MCVR<? extends InputAction> vr;
     public VRRenderer vrRenderer;
     public MenuWorldRenderer menuWorldRenderer;
+    public final TabletopManager tabletop = new TabletopManager(this);
 
     // list of all registered trackers
     private final List<Tracker> trackers = new ArrayList<>();

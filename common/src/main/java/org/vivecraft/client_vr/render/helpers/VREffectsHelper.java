@@ -65,6 +65,7 @@ import org.vivecraft.client_vr.render.renderstates.ScreenRenderState;
 import org.vivecraft.client_vr.render.renderstates.VRRenderState;
 import org.vivecraft.client_vr.render.rendertypes.VRRenderTypes;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.common.utils.MathUtils;
 import org.vivecraft.mixin.client_vr.renderer.GameRendererAccessor;
 import org.vivecraft.mod_compat_vr.immersiveportals.ImmersivePortalsHelper;
@@ -125,7 +126,8 @@ public class VREffectsHelper {
      * @return if the given entity is the active VR player and the camera entity
      */
     public static boolean isFirstPersonPlayer(Entity entity) {
-        return VRState.VR_RUNNING && entity == MC.player && entity == MC.getCameraEntity();
+        return VRState.VR_RUNNING && entity == MC.player && entity == MC.getCameraEntity() &&
+            !TabletopManager.isActive();
     }
 
     /**

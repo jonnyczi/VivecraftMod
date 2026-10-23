@@ -6,7 +6,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public abstract class HapticScheduler {
-    protected ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    // a daemon thread, otherwise the game can't exit after the first haptic pulse
+    protected ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "Vivecraft Haptics");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     /**
      * schedules a haptic pulse on the give controller at the given delay

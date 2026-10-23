@@ -39,6 +39,7 @@ import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
@@ -58,6 +59,7 @@ import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client.gui.VivecraftClickEvent;
 import org.vivecraft.client.gui.framework.screens.ChangeableParentScreen;
 import org.vivecraft.client.gui.screens.ErrorScreen;
+import org.vivecraft.client.utils.ExitWatchdog;
 import org.vivecraft.client.gui.screens.ServerVrChangesScreen;
 import org.vivecraft.client.gui.screens.UpdateScreen;
 import org.vivecraft.client.network.ClientNetworking;
@@ -65,6 +67,7 @@ import org.vivecraft.client.utils.ClientUtils;
 import org.vivecraft.client.utils.TextUtils;
 import org.vivecraft.client.utils.UpdateChecker;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.MethodHolder;
 import org.vivecraft.client_vr.VRState;
 import org.vivecraft.client_vr.extensions.GameRendererExtension;
@@ -73,6 +76,7 @@ import org.vivecraft.client_vr.extensions.WindowExtension;
 import org.vivecraft.client_vr.gameplay.KeybindHandler;
 import org.vivecraft.client_vr.gameplay.screenhandlers.GuiHandler;
 import org.vivecraft.client_vr.gameplay.trackers.TelescopeTracker;
+import org.vivecraft.client_vr.provider.control.ControllerType;
 import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.provider.control.InputAction;
 import org.vivecraft.client_vr.render.MirrorNotification;
@@ -80,6 +84,8 @@ import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.render.helpers.ShaderHelper;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.client_vr.render.helpers.VRPassHelper;
 import org.vivecraft.client_vr.render.helpers.graphics.GraphicsHelper;
 import org.vivecraft.client_vr.settings.VRHotkeys;
@@ -148,6 +154,9 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
     public HitResult hitResult;
 
     @Shadow
+    public Entity crosshairPickEntity;
+
+    @Shadow
     @Final
     public Gui gui;
 
@@ -185,6 +194,12 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             }
             ClientDataHolderVR.getInstance().cachedScreen = null;
         }
+    }
+
+    @Inject(method = "exitWorldAndClose", at = @At("HEAD"))
+    private void vivecraft$startExitWatchdog(CallbackInfo ci) {
+        // the game sometimes doesn't fully exit with VR, this records why
+        ExitWatchdog.start(((Minecraft) (Object) this).gameDirectory.toPath().resolve("logs"));
     }
 
     @Inject(method = "exitWorldAndClose", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;close()V"))
@@ -416,6 +431,31 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
                         this.player.getDirection(), this.player.blockPosition());
                 } else {
                     this.hitResult = BlockHitResult.miss(Vec3.ZERO, Direction.UP, BlockPos.ZERO);
+                }
+                return;
+            }
+
+            if (TabletopManager.isActive() && this.player != null && this.getCameraEntity() == this.player) {
+                if (dataHolder.interactTracker.isActiveModule(dataHolder.hotbarModule)) {
+                    // the hand is selecting a hotbar slot, so it doesn't point at the world
+                    this.hitResult = TabletopPick.none(this.player.position());
+                    this.crosshairPickEntity = null;
+                    return;
+                }
+                if (TabletopPick.shouldKeepTarget((Minecraft) (Object) this, this.hitResult)) {
+                    // stay on the block that is being broken
+                    return;
+                }
+                // the controller is far away from the world, so pick along the ray through the tabletop
+                HitResult previous = this.hitResult;
+                VRData.VRDevicePose aim = dataHolder.vrPlayer.vrdata_world_render.getAim();
+                this.hitResult = TabletopPick.pick(this.player, aim.getPosition(), new Vec3(aim.getDirection()),
+                    dataHolder.tabletop.getClipBox());
+                this.crosshairPickEntity = this.hitResult instanceof EntityHitResult entityHitResult ?
+                    entityHitResult.getEntity() : null;
+                if (TabletopPick.isNewTarget(previous, this.hitResult)) {
+                    // a small tick, so the target change can be felt
+                    dataHolder.vr.triggerHapticPulse(ControllerType.RIGHT, 0.002F, 160.0F, 0.6F);
                 }
                 return;
             }

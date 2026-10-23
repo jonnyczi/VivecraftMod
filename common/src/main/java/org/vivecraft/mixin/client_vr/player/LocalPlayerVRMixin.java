@@ -34,6 +34,7 @@ import org.vivecraft.client_vr.VRState;
 import org.vivecraft.client_vr.extensions.PlayerExtension;
 import org.vivecraft.client_vr.gameplay.VRPlayer;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.common.network.packet.c2s.TeleportPayloadC2S;
 import org.vivecraft.data.ViveModifiers;
 
@@ -137,8 +138,9 @@ public abstract class LocalPlayerVRMixin extends LocalPlayer_PlayerVRMixin imple
 
     @Inject(method = "move", at = @At("HEAD"), cancellable = true)
     private void vivecraft$overwriteMove(MoverType type, Vec3 pos, CallbackInfo ci) {
+        // in tabletop mode the avatar moves like a vanilla player, independent of the room
         if (!VRState.VR_RUNNING || !vivecraft$isLocalPlayer(this) ||
-            Minecraft.getInstance().getCameraEntity() != (Object) this)
+            Minecraft.getInstance().getCameraEntity() != (Object) this || TabletopManager.isActive())
         {
             AttributeInstance attribute = this.getAttribute(Attributes.STEP_HEIGHT);
             if (attribute != null && attribute.hasModifier(ViveModifiers.WALK_UP_BLOCKS)) {

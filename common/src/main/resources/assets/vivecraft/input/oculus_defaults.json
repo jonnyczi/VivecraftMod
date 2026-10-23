@@ -60,7 +60,25 @@
         {
           "inputs": {
             "click": {
+              "output": "/actions/contextual/in/vivecraft.key.tabletopgrab"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/left/input/grip"
+        },
+        {
+          "inputs": {
+            "click": {
               "output": "/actions/contextual/in/vivecraft.key.climbeygrab"
+            }
+          },
+          "mode": "button",
+          "path": "/user/hand/right/input/grip"
+        },
+        {
+          "inputs": {
+            "click": {
+              "output": "/actions/contextual/in/vivecraft.key.tabletopgrab"
             }
           },
           "mode": "button",

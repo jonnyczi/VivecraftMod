@@ -22,7 +22,9 @@ public enum NetworkVersion {
     // adds packet to override the aim direction/position
     AIM_OVERRIDE,
     // adds a packet to indicate to the server that the client did a climbey jump
-    CLIMBEY_JUMP;
+    CLIMBEY_JUMP,
+    // adds packets for tabletop mode, where the client reaches into a small copy of the world
+    TABLETOP;
 
     public static NetworkVersion fromProtocolVersion(int protocolVersion) {
         return values()[protocolVersion + 1];

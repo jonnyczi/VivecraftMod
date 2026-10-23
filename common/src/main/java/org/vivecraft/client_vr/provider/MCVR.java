@@ -27,7 +27,7 @@ import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.QuaternionfHistory;
 import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.Vector3fHistory;
-import org.vivecraft.client_vr.extensions.GuiExtension;
+import org.vivecraft.client_vr.extensions.HudExtension;
 import org.vivecraft.client_vr.extensions.WindowExtension;
 import org.vivecraft.client_vr.gameplay.screenhandlers.GuiHandler;
 import org.vivecraft.client_vr.gameplay.screenhandlers.KeyboardHandler;
@@ -38,6 +38,7 @@ import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.settings.AutoCalibration;
 import org.vivecraft.client_vr.settings.VRHotkeys;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.ViewMode;
 import org.vivecraft.client_vr.utils.osc_trackers.OSCTracker;
 import org.vivecraft.client_vr.utils.osc_trackers.OSCTrackerReceiver;
 import org.vivecraft.common.utils.MathUtils;
@@ -687,14 +688,11 @@ public abstract class MCVR<T extends InputAction> {
 
                 this.aimPitch = Mth.clamp(this.aimPitch + vPos * ySpeed, -89.9F, 89.9F);
 
-                double screenX = xPos *
-                    (((WindowExtension) (Object) this.mc.getWindow()).vivecraft$getActualScreenWidth() /
-                        (double) screenWidth
-                    );
+                Vector2ic windowSize = ((WindowExtension) (Object) this.mc.getWindow()).vivecraft$getActualWindowSize();
+
+                double screenX = xPos * (windowSize.x() / (double) screenWidth);
                 double screenY = (screenHeight * 0.5F) *
-                    (((WindowExtension) (Object) this.mc.getWindow()).vivecraft$getActualScreenHeight() /
-                        (double) this.mc.getWindow().getScreenHeight()
-                    );
+                    (windowSize.y() / (double) this.mc.getWindow().getScreenHeight());
 
                 InputSimulator.setMousePos(screenX, screenY);
                 GLFW.glfwSetCursorPos(this.mc.getWindow().handle(), screenX, screenY);
@@ -1026,8 +1024,15 @@ public abstract class MCVR<T extends InputAction> {
 
         // player list
         if (MOD.keyTogglePlayerList.consumeClick()) {
-            ((GuiExtension) this.mc.gui).vivecraft$setShowPlayerList(
-                !((GuiExtension) this.mc.gui).vivecraft$getShowPlayerList());
+            ((HudExtension) this.mc.gui.hud).vivecraft$setShowPlayerList(
+                !((HudExtension) this.mc.gui.hud).vivecraft$getShowPlayerList());
+        }
+
+        // switch between life size VR and the tabletop diorama
+        if (MOD.keyToggleTabletop.consumeClick()) {
+            this.dh.vrSettings.viewMode =
+                this.dh.vrSettings.viewMode == ViewMode.TABLETOP ? ViewMode.VR : ViewMode.TABLETOP;
+            this.dh.vrSettings.saveOptions();
         }
 
         // screenshot cam
@@ -1194,6 +1199,8 @@ public abstract class MCVR<T extends InputAction> {
         this.getInputAction(MOD.keyClimbeyGrab).setPriority(10);
         this.getInputAction(MOD.keyClimbeyGrab).setEnabled(false);
         this.getInputAction(MOD.keyClimbeyJump).setPriority(20).setEnabled(false);
+        // only enabled in tabletop mode, no priority, the tabletop disables the actions it replaces itself
+        this.getInputAction(MOD.keyTabletopGrab).setEnabled(false);
         this.getInputAction(GuiHandler.KEY_KEYBOARD_CLICK).setPriority(50);
         this.getInputAction(GuiHandler.KEY_KEYBOARD_SHIFT).setPriority(50);
     }
@@ -1244,6 +1251,7 @@ public abstract class MCVR<T extends InputAction> {
         this.addActionParams(map, GuiHandler.KEY_SHIFT, "suggested", ActionType.BOOLEAN, null);
         this.addActionParams(map, GuiHandler.KEY_KEYBOARD_CLICK, "suggested", ActionType.BOOLEAN, null);
         this.addActionParams(map, GuiHandler.KEY_KEYBOARD_SHIFT, "suggested", ActionType.BOOLEAN, null);
+        this.addActionParams(map, MOD.keyTabletopGrab, "suggested", ActionType.BOOLEAN, VRInputActionSet.CONTEXTUAL);
 
         // users can provide their own action parameters if they want
         // this allows them to split mod KeyMappings into GUI, INGAME and GLOBAL categories
@@ -1741,6 +1749,27 @@ public abstract class MCVR<T extends InputAction> {
     public boolean capFPS() {
         return false;
     }
+
+    /**
+     * @return if the VR runtime can show the real world (camera passthrough) behind transparent parts of the frame
+     */
+    public boolean supportsPassthrough() {
+        return false;
+    }
+
+    /**
+     * @return if passthrough is currently active, frames should then be rendered with a transparent background
+     */
+    public boolean isPassthroughActive() {
+        return false;
+    }
+
+    /**
+     * enables or disables camera passthrough, does nothing if {@link #supportsPassthrough()} is false
+     *
+     * @param active if passthrough should be shown behind transparent parts of the frame
+     */
+    public void setPassthroughActive(boolean active) {}
 
     /**
      * @return the ipd in meters

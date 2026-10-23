@@ -41,6 +41,8 @@ public class VivecraftVRMod {
         this.categoryClimbey);
     public final HandedKeyBinding keyClimbeyJump = new HandedKeyBinding("vivecraft.key.climbeyJump", -1,
         this.categoryClimbey);
+    public final HandedKeyBinding keyTabletopGrab = new HandedKeyBinding("vivecraft.key.tabletopGrab", -1,
+        this.categoryClimbey);
     public final KeyMapping keyExportWorld = new KeyMapping("vivecraft.key.exportWorld", -1,
         KeyMapping.Category.MISC);
     public final KeyMapping keyFreeMoveRotate = new KeyMapping("vivecraft.key.freeMoveRotate", -1,
@@ -120,6 +122,8 @@ public class VivecraftVRMod {
         KeyMapping.Category.MISC);
     public final KeyMapping keyToggleMovement = new KeyMapping("vivecraft.key.toggleMovement", -1,
         KeyMapping.Category.MOVEMENT);
+    public final KeyMapping keyToggleTabletop = new KeyMapping("vivecraft.key.toggleTabletop", -1,
+        KeyMapping.Category.MISC);
     public final KeyMapping keyToggleWalkUpBlocks = new KeyMapping("vivecraft.key.toggleWalkUp", -1,
         KeyMapping.Category.MOVEMENT);
     public final KeyMapping keyTogglePlayerList = new KeyMapping("vivecraft.key.togglePlayerList", -1,
@@ -152,6 +156,7 @@ public class VivecraftVRMod {
             this.userKeyBindingSet.add(this.keyMoveThirdPersonCam);
             this.userKeyBindingSet.add(this.keyTogglePlayerList);
             this.userKeyBindingSet.add(this.keyToggleHandheldCam);
+            this.userKeyBindingSet.add(this.keyToggleTabletop);
             this.userKeyBindingSet.add(this.keyQuickHandheldCam);
             this.userKeyBindingSet.add(this.keyToggleKeyboard);
             this.userKeyBindingSet.add(this.keyQuickCommand1);
@@ -180,6 +185,7 @@ public class VivecraftVRMod {
             this.hiddenKeyBindingSet.add(GuiHandler.KEY_KEYBOARD_CLICK);
             this.hiddenKeyBindingSet.add(GuiHandler.KEY_KEYBOARD_SHIFT);
             this.hiddenKeyBindingSet.add(this.keyClimbeyGrab);
+            this.hiddenKeyBindingSet.add(this.keyTabletopGrab);
             this.hiddenKeyBindingSet.add(this.keyClimbeyJump);
             this.hiddenKeyBindingSet.add(this.keyMenuButton);
             this.hiddenKeyBindingSet.add(this.keyRadialMenu);

@@ -23,6 +23,7 @@ import org.vivecraft.client_vr.render.helpers.ShaderHelper;
 import org.vivecraft.client_vr.render.ubos.LanczosUBO;
 import org.vivecraft.client_vr.render.ubos.MixedRealityUBO;
 import org.vivecraft.client_vr.render.ubos.PostProcessUBO;
+import org.vivecraft.client_vr.tabletop.render.TabletopClip;
 
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -111,6 +112,18 @@ public class VRShaders {
             new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_COLOR))
         .build();
 
+    // shows the alpha of the source as a checkerboard
+    public static final RenderPipeline BLIT_VR_ALPHA_DEBUG_PIPELINE = RenderPipeline.builder()
+        .withLocation(Identifier.fromNamespaceAndPath("vivecraft", "pipeline/vivecraft_blit_alpha_debug"))
+        .withVertexShader(Identifier.fromNamespaceAndPath("vivecraft", "core/passthrough_vr"))
+        .withFragmentShader(Identifier.fromNamespaceAndPath("vivecraft", "core/blit_alpha_debug_vr"))
+        .withBindGroupLayout(BLIT_VR_BIND_GROUP)
+        .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
+        .withPrimitiveTopology(PrimitiveTopology.QUADS)
+        .withColorTargetState(
+            new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_COLOR))
+        .build();
+
     public static final RenderPipeline BLIT_VR_BLEND_PIPELINE = RenderPipeline.builder()
         .withLocation(Identifier.fromNamespaceAndPath("vivecraft", "pipeline/vivecraft_blit"))
         .withVertexShader(Identifier.fromNamespaceAndPath("vivecraft", "core/passthrough_vr"))
@@ -161,6 +174,7 @@ public class VRShaders {
         .withLocation(Identifier.fromNamespaceAndPath("vivecraft", "pipeline/panorama"))
         .withVertexShader("core/panorama")
         .withFragmentShader("core/panorama")
+        .withBindGroupLayout(BindGroupLayouts.GLOBALS)
         .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
         .withBindGroupLayout(CORE_TEXTURE_LAYOUT)
         .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
@@ -194,8 +208,6 @@ public class VRShaders {
         .withColorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.ONE_MINUS_DST_COLOR, BlendFactor.ZERO,
             BlendFactor.ONE, BlendFactor.ONE_MINUS_SRC_ALPHA))).build();
 
-    // all those NO_DEPTH_TEST should be ALWAYS_DEPTH_TEST, to also be able to write depth
-    // but 1.21.5 doesn't have that
     public static final RenderPipeline CROSSHAIR_WORLD_ALWAYS = RenderPipeline.builder(ENTITY_SNIPPET)
         .withLocation(Identifier.fromNamespaceAndPath("vivecraft", "pipeline/crosshair_world_always_vr"))
         .withColorTargetState(new ColorTargetState(new BlendFunction(BlendFactor.ONE_MINUS_DST_COLOR, BlendFactor.ZERO,
@@ -339,6 +351,7 @@ public class VRShaders {
             LANCZOS_UBO.close();
             LANCZOS_UBO = null;
         }
+        TabletopClip.close();
         if (GUI_SAMPLER != null) {
             GUI_SAMPLER.close();
             GUI_SAMPLER = null;

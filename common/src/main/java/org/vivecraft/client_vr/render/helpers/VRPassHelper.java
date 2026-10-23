@@ -19,6 +19,7 @@ import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.render.VRShaders;
 import org.vivecraft.client_vr.render.helpers.graphics.GraphicsHelper;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.render.TabletopClip;
 import org.vivecraft.client_xr.render_pass.RenderPassManager;
 import org.vivecraft.client_xr.render_pass.WorldRenderPass;
 import org.vivecraft.common.utils.MathUtils;
@@ -41,7 +42,8 @@ public class VRPassHelper {
      */
     public static void renderSingleView(RenderPass eye, DeltaTracker.Timer deltaTracker, boolean renderLevel) {
         RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(
-            MC.gameRenderer.mainRenderTarget().getColorTexture(), MathUtils.BLACK_SOLID,
+            MC.gameRenderer.mainRenderTarget().getColorTexture(),
+            PassthroughHelper.hasTransparentBackground() ? MathUtils.BLACK_TRANSPARENT : MathUtils.BLACK_SOLID,
             MC.gameRenderer.mainRenderTarget().getDepthTexture(), 0.0);
 
         // THIS IS WHERE EVERYTHING IS RENDERED
@@ -186,6 +188,9 @@ public class VRPassHelper {
         // don't reextract the gui for the world passes
         ((GameRendererExtension) MC.gameRenderer).vivecraft$setShouldDrawScreen(false);
 
+        PassthroughHelper.updateFrame();
+        TabletopClip.updateFrame();
+
         // render the different vr passes
         List<RenderPass> list = DATA_HOLDER.vrRenderer.getRenderPasses(false);
         DATA_HOLDER.isFirstPass = true;
@@ -253,6 +258,7 @@ public class VRPassHelper {
 
         try {
             DATA_HOLDER.vrRenderer.endFrame();
+            TabletopClip.endFrame();
         } catch (RenderConfigException exception) {
             // something went wrong, disable VR
             VRState.VR_ENABLED = false;

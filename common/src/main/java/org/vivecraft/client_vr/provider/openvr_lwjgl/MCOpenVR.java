@@ -59,7 +59,9 @@ import static org.lwjgl.openvr.VRApplications.*;
 import static org.lwjgl.openvr.VRCompositor.*;
 import static org.lwjgl.openvr.VRInput.*;
 import static org.lwjgl.openvr.VRRenderModels.*;
+import static org.lwjgl.openvr.VRSettings.VRSettings_GetBool;
 import static org.lwjgl.openvr.VRSettings.VRSettings_GetFloat;
+import static org.lwjgl.openvr.VRSettings.VRSettings_SetBool;
 import static org.lwjgl.openvr.VRSystem.*;
 
 /**
@@ -121,6 +123,13 @@ public class MCOpenVR extends MCVR<VRInputAction> {
 
     // general error buffer
     private final IntBuffer errorBuffer;
+
+    // undocumented SteamVR setting, makes the compositor show the camera passthrough where the submitted frame has alpha < 1
+    private static final String PASSTHROUGH_SETTING_SECTION = "camera";
+    private static final String PASSTHROUGH_SETTING_KEY = "forceSceneAlphaBlending";
+    // value of the passthrough setting before we changed it, to restore it on exit
+    private boolean passthroughOriginalValue;
+    private boolean passthroughActive;
 
     // Last updated 10/29/2023
     // Hard-coded list of languages Steam supports
@@ -232,6 +241,8 @@ public class MCOpenVR extends MCVR<VRInputAction> {
     public void destroy() {
         super.destroy();
         if (this.initialized) {
+            // the passthrough setting is persistent, so restore the users value
+            this.setPassthroughActive(false);
             try {
                 VR_ShutdownInternal();
                 this.initialized = false;
@@ -502,7 +513,7 @@ public class MCOpenVR extends MCVR<VRInputAction> {
 
                     property += switch (type) {
                         case "Float" -> VRSystem_GetFloatTrackedDeviceProperty(deviceIndex, prop, this.errorBuffer);
-                        case "String" -> VRSystem_GetStringTrackedDeviceProperty(deviceIndex, prop, this.errorBuffer);
+                        case "String" -> getStringDeviceProperty(deviceIndex, prop);
                         case "Bool" -> VRSystem_GetBoolTrackedDeviceProperty(deviceIndex, prop, this.errorBuffer);
                         case "Int32" -> VRSystem_GetInt32TrackedDeviceProperty(deviceIndex, prop, this.errorBuffer);
                         case "Uint64" -> VRSystem_GetUint64TrackedDeviceProperty(deviceIndex, prop, this.errorBuffer);
@@ -519,10 +530,8 @@ public class MCOpenVR extends MCVR<VRInputAction> {
         } else {
             // print only manufacturer and model
             VRSettings.LOGGER.info("Vivecraft: VR DEVICE: {}, Manufacturer: {}, Model: {}", deviceIndex,
-                VRSystem_GetStringTrackedDeviceProperty(deviceIndex,
-                    ETrackedDeviceProperty_Prop_ManufacturerName_String, this.errorBuffer),
-                VRSystem_GetStringTrackedDeviceProperty(deviceIndex,
-                    VR.ETrackedDeviceProperty_Prop_ModelNumber_String, this.errorBuffer));
+                getStringDeviceProperty(deviceIndex, VR.ETrackedDeviceProperty_Prop_ManufacturerName_String),
+                getStringDeviceProperty(deviceIndex, VR.ETrackedDeviceProperty_Prop_ModelNumber_String));
         }
     }
 
@@ -817,6 +826,29 @@ public class MCOpenVR extends MCVR<VRInputAction> {
     }
 
     /**
+     * gets the specified string property for the given device, catches any errors and empty strings
+     *
+     * @param deviceIndex device to get the property for
+     * @param property    property to get
+     * @return property content, error if one happened or "Unknown" if no property was returned
+     */
+    private String getStringDeviceProperty(int deviceIndex, int property) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            ByteBuffer stringBuffer = stack.calloc(k_unMaxPropertyStringSize);
+
+            int length = VRSystem_GetStringTrackedDeviceProperty(deviceIndex, property, stringBuffer, this.errorBuffer);
+
+            if (isError()) {
+                return VRSystem_GetPropErrorNameFromEnum(getError());
+            } else if (length <= 0) {
+                return "Unknown";
+            } else {
+                return MemoryUtil.memUTF8(MemoryUtil.memAddress(stringBuffer));
+            }
+        }
+    }
+
+    /**
      * @param buf ByteBuffer pointing to a String
      * @return String contained in the given buffer
      */
@@ -863,6 +895,12 @@ public class MCOpenVR extends MCVR<VRInputAction> {
             this.controllerComponentTransforms.put(component, new Matrix4f[2]);
 
             for (int c = 0; c < 2; c++) {
+                if (this.deviceSource[c].source != DeviceSource.Source.OPENVR ||
+                    this.deviceSource[c].deviceIndex == k_unTrackedDeviceIndexInvalid)
+                {
+                    failed = true;
+                    continue;
+                }
                 if (this.dh.vrSettings.controllerTransform != ControllerTransform.AUTO) {
                     VRSettings.LOGGER.info("Vivecraft: forcing {} controller transforms!",
                         this.dh.vrSettings.controllerTransform);
@@ -876,24 +914,13 @@ public class MCOpenVR extends MCVR<VRInputAction> {
                                 this.dh.vrSettings.controllerTransform.handGripL);
                     }
                 } else {
-                    if (this.deviceSource[c].source != DeviceSource.Source.OPENVR ||
-                        this.deviceSource[c].deviceIndex == k_unTrackedDeviceIndexInvalid)
-                    {
-                        failed = true;
-                        continue;
-                    }
                     try (MemoryStack stack = MemoryStack.stackPush()) {
-                        var stringBuffer = stack.calloc(k_unMaxPropertyStringSize);
+                        String renderModelName = getStringDeviceProperty(this.deviceSource[c].deviceIndex,
+                            VR.ETrackedDeviceProperty_Prop_RenderModelName_String);
 
-                        VRSystem_GetStringTrackedDeviceProperty(this.deviceSource[c].deviceIndex,
-                            VR.ETrackedDeviceProperty_Prop_RenderModelName_String, stringBuffer, this.errorBuffer);
+                        String inputProfilePath = getStringDeviceProperty(this.deviceSource[c].deviceIndex,
+                            VR.ETrackedDeviceProperty_Prop_InputProfilePath_String);
 
-                        String renderModelName = memUTF8NullTerminated(stringBuffer);
-
-                        VRSystem_GetStringTrackedDeviceProperty(this.deviceSource[c].deviceIndex,
-                            VR.ETrackedDeviceProperty_Prop_InputProfilePath_String, stringBuffer, this.errorBuffer);
-
-                        String inputProfilePath = memUTF8NullTerminated(stringBuffer);
                         boolean isWMR = inputProfilePath.contains("holographic");
                         boolean isRifts = inputProfilePath.contains("rifts");
 
@@ -1001,16 +1028,11 @@ public class MCOpenVR extends MCVR<VRInputAction> {
         };
         VRSettings.LOGGER.info("Vivecraft: TrackingSpace: {}", actualTrackingSpace);
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            ByteBuffer stringBuffer = stack.calloc(20);
+        String deviceName = getStringDeviceProperty(k_unTrackedDeviceIndex_Hmd,
+            ETrackedDeviceProperty_Prop_ManufacturerName_String);
 
-            VRSystem_GetStringTrackedDeviceProperty(k_unTrackedDeviceIndex_Hmd,
-                ETrackedDeviceProperty_Prop_ManufacturerName_String, stringBuffer, this.errorBuffer);
-
-            String deviceName = memUTF8NullTerminated(stringBuffer);
-            VRSettings.LOGGER.info("Vivecraft: Device manufacturer is: {}", deviceName);
-            this.detectedHardware = HardwareType.fromManufacturer(deviceName);
-        }
+        VRSettings.LOGGER.info("Vivecraft: Device manufacturer is: {}", deviceName);
+        this.detectedHardware = HardwareType.fromManufacturer(deviceName);
 
         // texture bounds, currently unused, since we use the full texture anyway
         this.texBounds.uMax(1.0F);
@@ -1731,6 +1753,51 @@ public class MCOpenVR extends MCVR<VRInputAction> {
         int activityLevel = VRSystem_GetTrackedDeviceActivityLevel(k_unTrackedDeviceIndex_Hmd);
         return activityLevel == EDeviceActivityLevel_k_EDeviceActivityLevel_UserInteraction ||
             activityLevel == EDeviceActivityLevel_k_EDeviceActivityLevel_UserInteraction_Timeout;
+    }
+
+    /**
+     * OpenVR has no api for passthrough, so this is not advertised. passthrough can still be tried with the
+     * transparent background debug setting, on runtimes that respect the {@link #PASSTHROUGH_SETTING_KEY} setting
+     */
+    @Override
+    public boolean supportsPassthrough() {
+        return false;
+    }
+
+    @Override
+    public boolean isPassthroughActive() {
+        return this.passthroughActive;
+    }
+
+    @Override
+    public void setPassthroughActive(boolean active) {
+        // only from the debug setting, since this is not officially supported
+        if (!this.initialized || this.passthroughActive == active ||
+            (active && !this.dh.vrSettings.renderTransparentBackground))
+        {
+            return;
+        }
+
+        if (active) {
+            this.passthroughOriginalValue = VRSettings_GetBool(PASSTHROUGH_SETTING_SECTION, PASSTHROUGH_SETTING_KEY,
+                this.errorBuffer);
+            if (this.errorBuffer.get(0) != EVRSettingsError_VRSettingsError_None) {
+                // setting doesn't exist yet, so it is off
+                this.passthroughOriginalValue = false;
+            }
+        }
+
+        boolean value = active || this.passthroughOriginalValue;
+        VRSettings_SetBool(PASSTHROUGH_SETTING_SECTION, PASSTHROUGH_SETTING_KEY, value, this.errorBuffer);
+        int error = this.errorBuffer.get(0);
+        if (error == EVRSettingsError_VRSettingsError_None) {
+            VRSettings.LOGGER.info("Vivecraft: set SteamVR '{}/{}' to {}", PASSTHROUGH_SETTING_SECTION,
+                PASSTHROUGH_SETTING_KEY, value);
+        } else {
+            VRSettings.LOGGER.error("Vivecraft: failed to set SteamVR '{}/{}' to {}, error: {}",
+                PASSTHROUGH_SETTING_SECTION, PASSTHROUGH_SETTING_KEY, value, error);
+        }
+        this.passthroughActive = active;
     }
 
     @Override

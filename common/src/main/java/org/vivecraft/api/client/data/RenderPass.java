@@ -2,6 +2,7 @@ package org.vivecraft.api.client.data;
 
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 
 /**
  * A pass used to render things. What is rendered during a RenderPass depends on the pass, most are RenderPass that
@@ -100,7 +101,8 @@ public enum RenderPass {
      * @return Whether the provided RenderPass is supposed to render the player.
      */
     public static boolean renderPlayer(RenderPass pass) {
-        return pass == CAMERA ||
+        // in tabletop mode the player is an avatar in the world
+        return pass == CAMERA || TabletopManager.isActive() ||
             (isFirstPerson(pass) && ClientDataHolderVR.getInstance().vrSettings.shouldRenderSelf) || (pass == THIRD &&
             ClientDataHolderVR.getInstance().vrSettings.displayMirrorMode == VRSettings.MirrorMode.THIRD_PERSON
         );

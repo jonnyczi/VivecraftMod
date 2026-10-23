@@ -46,6 +46,7 @@ import org.vivecraft.client_vr.render.VRShaders;
 import org.vivecraft.client_vr.render.helpers.VREffectsHelper;
 import org.vivecraft.client_vr.render.helpers.graphics.GraphicsHelper;
 import org.vivecraft.client_vr.render.renderstates.VRRenderState;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_xr.render_pass.RenderPassManager;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
 
@@ -216,7 +217,7 @@ public abstract class GameRendererVRMixin
                 // we still need the camera setup outside a level
                 this.mainCamera.extractRenderState(this.gameRenderState.levelRenderState.cameraRenderState, 0);
             }
-            return this.vivecraft$shouldDrawGui;
+            return this.vivecraft$shouldDrawGui && this.minecraft.isGameLoadFinished() && this.minecraft.level != null;
         }
     }
 
@@ -353,7 +354,8 @@ public abstract class GameRendererVRMixin
     @Override
     @Unique
     public void vivecraft$cacheRVEPos(Entity entity) {
-        if (this.minecraft.getCameraEntity() != null && !this.vivecraft$cached) {
+        // in tabletop mode the player stays where it is, to be rendered as an avatar in the world
+        if (this.minecraft.getCameraEntity() != null && !this.vivecraft$cached && !TabletopManager.isActive()) {
             this.vivecraft$rveX = entity.getX();
             this.vivecraft$rveY = entity.getY();
             this.vivecraft$rveZ = entity.getZ();
@@ -380,7 +382,7 @@ public abstract class GameRendererVRMixin
     @Override
     @Unique
     public void vivecraft$restoreRVEPos(Entity entity) {
-        if (entity != null) {
+        if (entity != null && this.vivecraft$cached) {
             entity.setPosRaw(this.vivecraft$rveX, this.vivecraft$rveY, this.vivecraft$rveZ);
             entity.xOld = this.vivecraft$rvelastX;
             entity.yOld = this.vivecraft$rvelastY;
