@@ -157,6 +157,7 @@
     "world.entity.projectile.ThrownTridentMixin",
     "world.item.CrossbowItemMixin",
     "world.item.ItemMixin",
+    "world.level.block.BlockMixin",
     "world.level.block.FenceGateBlockServerMixin",
     "world.level.savedata.maps.MapItemSavedDataMixin"
   ]

@@ -189,6 +189,10 @@ public class ServerNetworking {
                         new AttackWhileBlockingPayloadS2C(ServerConfig.ALLOW_ATTACKS_WHILE_BLOCKING.get()));
                 }
 
+                if (NetworkVersion.TABLETOP.accepts(vivePlayer.networkVersion)) {
+                    packetConsumer.accept(ServerConfig.getTabletopPayload());
+                }
+
                 packetConsumer.accept(new NetworkVersionPayloadS2C(vivePlayer.networkVersion));
             }
             case IS_VR_ACTIVE -> {
@@ -229,6 +233,10 @@ public class ServerNetworking {
                 {
                     player.causeFoodExhaustion(0.005F);
                 }
+            }
+            case TABLETOP -> {
+                TabletopPayloadC2S payload = (TabletopPayloadC2S) c2sPayload;
+                vivePlayer.setTabletop(payload.active(), payload.reach());
             }
             case JUMPING -> {
                 if (ServerConfig.CLIMBEY_FOOD_EXHAUSTION.get()) {

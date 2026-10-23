@@ -46,4 +46,32 @@ public class ClipBoxTest {
         Assertions.assertFalse(box.intersects(10.5, 0, 0, 11, 1, 1));
         Assertions.assertFalse(box.shrink(1.0).contains(0.5, 5, 5));
     }
+
+    @Test
+    public void rayIntersection() {
+        ClipBox box = new ClipBox(0, 0, 0, 10, 10, 10);
+
+        // from above, straight down through the middle
+        double[] hit = box.intersectRay(new Vec3(5, 20, 5), new Vec3(0, -1, 0));
+        Assertions.assertNotNull(hit);
+        Assertions.assertEquals(10.0, hit[0], 1.0E-9);
+        Assertions.assertEquals(20.0, hit[1], 1.0E-9);
+
+        // diagonal, direction not normalized
+        hit = box.intersectRay(new Vec3(-5, 5, 5), new Vec3(2, 0, 0));
+        Assertions.assertNotNull(hit);
+        Assertions.assertEquals(2.5, hit[0], 1.0E-9);
+        Assertions.assertEquals(7.5, hit[1], 1.0E-9);
+
+        // starting inside enters at 0
+        hit = box.intersectRay(new Vec3(5, 5, 5), new Vec3(1, 1, 0));
+        Assertions.assertNotNull(hit);
+        Assertions.assertEquals(0.0, hit[0], 1.0E-9);
+        Assertions.assertEquals(5.0, hit[1], 1.0E-9);
+
+        // pointing away, parallel outside, and passing next to it
+        Assertions.assertNull(box.intersectRay(new Vec3(5, 20, 5), new Vec3(0, 1, 0)));
+        Assertions.assertNull(box.intersectRay(new Vec3(5, 20, 5), new Vec3(1, 0, 0)));
+        Assertions.assertNull(box.intersectRay(new Vec3(-5, 20, 5), new Vec3(1, -0.1, 0)));
+    }
 }

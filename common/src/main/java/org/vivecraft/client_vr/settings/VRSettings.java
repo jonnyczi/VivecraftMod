@@ -288,6 +288,8 @@ public class VRSettings {
     public float tabletopFrameSize = 1.0F;
     @SettingField(VrOptions.TABLETOP_PASSTHROUGH)
     public boolean tabletopPassthrough = true;
+    @SettingField(VrOptions.TABLETOP_REACH)
+    public float tabletopReach = 64.0F;
     @SettingField(value = VrOptions.WORLD_ROTATION)
     public float worldRotation = 0f;
     public float worldRotationCached;
@@ -2553,6 +2555,7 @@ public class VRSettings {
         TABLETOP_BLOCKS_PER_METER(10F, 200F, 5F, 0), // how many blocks fit in one meter in tabletop mode
         TABLETOP_FRAME_SIZE(0.4F, 2.0F, 0.1F, 1), // size of the tabletop frame in meters
         TABLETOP_PASSTHROUGH(OptionType.BOOLEAN), // show the real room around the table, if the headset supports it
+        TABLETOP_REACH(0.0F, 256.0F, 8.0F, 0), // extra reach in blocks around the player in tabletop mode, the server can limit it
         RENDER_DEBUG_TRANSPARENT_BACKGROUND(OptionType.BOOLEAN), // renders the world without a sky and shows passthrough if supported
         RENDER_DEBUG_ALPHA_CHECKERBOARD(OptionType.BOOLEAN), // shows transparent parts of the eye images as a checkerboard on the mirror
         RENDER_DEBUG_HEAD_HITBOX(OptionType.BOOLEAN), // renders entities head hit boxes

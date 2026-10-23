@@ -9,7 +9,8 @@
   "entrypoints": {
     "fabric-client-gametest": [
       "org.vivecraft.gametest.PassthroughClientGameTest",
-      "org.vivecraft.gametest.TabletopClientGameTest"
+      "org.vivecraft.gametest.TabletopClientGameTest",
+      "org.vivecraft.gametest.TabletopInteractionClientGameTest"
     ]
   },
   "depends": {

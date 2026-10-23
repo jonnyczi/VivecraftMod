@@ -73,6 +73,12 @@ public class LevelExtractorVRMixin {
         return isSleeping && RenderPassType.isVanilla();
     }
 
+    @ModifyExpressionValue(method = "extractBlockOutline", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;"))
+    private Object vivecraft$tabletopHighContrastOutline(Object highContrast) {
+        // the tabletop blocks are small, a two colored outline is easier to see on dark and light blocks
+        return TabletopManager.isActive() ? Boolean.TRUE : highContrast;
+    }
+
     @Inject(method = "extractBlockOutline", at = @At("HEAD"))
     private void vivecraft$extractInteractOutline(
         CallbackInfo ci, @Local(argsOnly = true) Camera camera,

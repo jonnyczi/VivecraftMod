@@ -18,10 +18,19 @@ public class VRTestHelper {
      * enables VR with the NullVR provider in seated mode and waits until it is running
      */
     public static void startNullVR(ClientGameTestContext context) {
+        startNullVR(context, true);
+    }
+
+    /**
+     * enables VR with the NullVR provider and waits until it is running
+     *
+     * @param seated in seated mode the controllers follow the mouse, standing lets tests place them
+     */
+    public static void startNullVR(ClientGameTestContext context, boolean seated) {
         context.runOnClient(mc -> {
             VRSettings settings = ClientDataHolderVR.getInstance().vrSettings;
             settings.stereoProviderPluginID = VRSettings.VRProvider.NULLVR;
-            settings.seated = true;
+            settings.seated = seated;
             settings.displayMirrorMode = VRSettings.MirrorMode.CROPPED;
             // the GC warning is a pause screen, which would stop the integrated server from loading chunks
             settings.disableGarbageCollectorMessage = true;

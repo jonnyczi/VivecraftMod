@@ -62,6 +62,9 @@ public class ClientNetworking {
     public static boolean SERVER_ALLOWS_CRAWLING = false;
     public static boolean SERVER_ALLOWS_VR_SWITCHING = false;
     public static boolean SERVER_ALLOWS_DUAL_WIELDING = false;
+    // if the server gives extra reach in tabletop mode, and how much at most
+    public static boolean SERVER_TABLETOP_ALLOWED = false;
+    public static float SERVER_TABLETOP_MAX_REACH = 0.0F;
     public static boolean SERVER_ALLOWS_ATTACKING_WHILE_BLOCKING = false;
 
     public static Map<String, String> SERVER_VR_CHANGES_LIST;
@@ -72,6 +75,9 @@ public class ClientNetworking {
     private static float HEIGHT_LAST = 0.0F;
     // if the player was in tabletop mode last tick
     private static boolean TABLETOP_LAST = false;
+    // last tabletop state that was sent to the server
+    private static boolean TABLETOP_SENT = false;
+    private static float TABLETOP_REACH_SENT = 0.0F;
 
     // these overrides are for vanilla servers
     public static Vector3fc AIM_DIR_OVERRIDE = null;
@@ -90,6 +96,10 @@ public class ClientNetworking {
         WORLDSCALE_LAST = 0.0F;
         HEIGHT_LAST = 0.0F;
         TABLETOP_LAST = false;
+        TABLETOP_SENT = false;
+        TABLETOP_REACH_SENT = 0.0F;
+        SERVER_TABLETOP_ALLOWED = false;
+        SERVER_TABLETOP_MAX_REACH = 0.0F;
         SERVER_HAS_VIVECRAFT = false;
         SERVER_WANTS_DATA = false;
         SERVER_SUPPORTS_DIRECT_TELEPORT = false;
@@ -155,6 +165,15 @@ public class ClientNetworking {
             if (SERVER_ALLOWS_VR_SWITCHING) {
                 sendServerPacket(new VRActivePayloadC2S(!tabletop));
             }
+        }
+        // ask for extra reach, so the whole tabletop can be reached, this needs to wait for the network version
+        float tabletopReach = tabletop ? ClientDataHolderVR.getInstance().vrSettings.tabletopReach : 0.0F;
+        if (NetworkVersion.TABLETOP.accepts(USED_NETWORK_VERSION) &&
+            (tabletop != TABLETOP_SENT || tabletopReach != TABLETOP_REACH_SENT))
+        {
+            TABLETOP_SENT = tabletop;
+            TABLETOP_REACH_SENT = tabletopReach;
+            sendServerPacket(new TabletopPayloadC2S(tabletop, tabletopReach));
         }
         if (tabletop) {
             return;
@@ -542,6 +561,11 @@ public class ClientNetworking {
                 VR_SWITCHING_WARNING = false;
             }
             case DUAL_WIELDING -> SERVER_ALLOWS_DUAL_WIELDING = ((DualWieldingPayloadS2C) s2cPayload).allowed();
+            case TABLETOP -> {
+                TabletopPayloadS2C payload = (TabletopPayloadS2C) s2cPayload;
+                SERVER_TABLETOP_ALLOWED = payload.allowed();
+                SERVER_TABLETOP_MAX_REACH = payload.maxReach();
+            }
             case SERVER_VR_CHANGES -> SERVER_VR_CHANGES_LIST = ((ServerVrChangesS2CPacket) s2cPayload).changes();
             case HAPTIC -> {
                 if (VRState.VR_RUNNING) {

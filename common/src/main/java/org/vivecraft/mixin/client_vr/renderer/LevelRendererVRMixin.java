@@ -43,7 +43,9 @@ import org.vivecraft.client_vr.render.helpers.PassthroughHelper;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.render.helpers.VREffectsHelper;
 import org.vivecraft.client_vr.render.renderstates.VRRenderState;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.render.TabletopCutFaces;
+import org.vivecraft.client_vr.tabletop.render.TabletopLaser;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
 import org.vivecraft.common.utils.MathUtils;
 
@@ -196,6 +198,13 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
     {
         if (RenderPassType.isVanilla()) return;
         TabletopCutFaces.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
+        TabletopLaser.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
+    }
+
+    @ModifyArg(method = "submitBlockOutline", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;submitHitOutline(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/rendertype/RenderType;Lnet/minecraft/client/renderer/state/level/BlockOutlineRenderState;IFZ)V", ordinal = 0), index = 5, require = 1)
+    private float vivecraft$thinTabletopOutlineBorder(float width) {
+        // the tabletop blocks are only a few pixels big, so the dark border of the high contrast outline is thinner
+        return TabletopManager.isActive() ? 4.0F : width;
     }
 
     @Inject(method = "submitFeatures*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))

@@ -2,6 +2,7 @@ package org.vivecraft.mixin.server.level;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.server.ServerVRPlayers;
+import org.vivecraft.server.TabletopDrops;
 import org.vivecraft.server.ServerVivePlayer;
 import org.vivecraft.server.config.ServerConfig;
 
@@ -39,6 +41,12 @@ public class ServerPlayerGameModeMixin {
     @WrapOperation(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayerGameMode;destroyBlock(Lnet/minecraft/core/BlockPos;)Z"))
     private boolean vivecraft$wrapDestroy(ServerPlayerGameMode instance, BlockPos pos, Operation<Boolean> original) {
         return vivecraft$wrapWithBodyPartChange(() -> original.call(instance, pos), true);
+    }
+
+    @WrapMethod(method = "destroyBlock")
+    private boolean vivecraft$tabletopDropsToInventory(BlockPos pos, Operation<Boolean> original) {
+        // in tabletop mode the block is far away, so give the drops directly to the player
+        return TabletopDrops.collectFor(this.player, () -> original.call(pos));
     }
 
     @Inject(method = "handleBlockBreakAction", at = @At(value = "FIELD", target = "Lnet/minecraft/server/level/ServerPlayerGameMode;hasDelayedDestroy:Z", opcode = Opcodes.PUTFIELD))

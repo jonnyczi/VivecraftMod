@@ -285,6 +285,18 @@ public class NullVR extends MCVR {
         return true;
     }
 
+    /**
+     * places a device in the room, like moving it with the keyboard, used by automated tests
+     *
+     * @param device   device index, like {@link MCVR#RIGHT_CONTROLLER}
+     * @param position position in room space
+     * @param rotation rotation in room space
+     */
+    public void setDevicePose(int device, Vector3fc position, Quaternionfc rotation) {
+        this.deviceOffsets[device].set(position);
+        this.deviceRotations[device].set(rotation);
+    }
+
     @Override
     public float getIPD() {
         return this.dh.vrSettings.nullvrIPD;

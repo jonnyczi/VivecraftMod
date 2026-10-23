@@ -1,7 +1,13 @@
 package org.vivecraft.server;
 
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
@@ -14,8 +20,10 @@ import org.vivecraft.common.network.CommonNetworkHelper;
 import org.vivecraft.common.network.NetworkVersion;
 import org.vivecraft.common.network.VrPlayerState;
 import org.vivecraft.common.utils.MathUtils;
+import org.vivecraft.server.config.ServerConfig;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class ServerVivePlayer {
     // player movement state
@@ -42,6 +50,14 @@ public class ServerVivePlayer {
     public boolean crawling;
     // if the player has VR active
     private boolean isVR = false;
+
+    // tabletop mode, where the player reaches into a small copy of the world in front of them
+    private static final Identifier TABLETOP_REACH_ID = Identifier.fromNamespaceAndPath("vivecraft", "tabletop_reach");
+    private static final List<Holder<Attribute>> TABLETOP_REACH_ATTRIBUTES = List.of(
+        Attributes.BLOCK_INTERACTION_RANGE, Attributes.ENTITY_INTERACTION_RANGE);
+    private boolean tabletop = false;
+    private float tabletopReach = 0.0F;
+
     // offset set during aimFix to keep the original data positions
     public Vec3 offset = Vec3.ZERO;
     // player this data belongs to
@@ -243,6 +259,49 @@ public class ServerVivePlayer {
     }
 
     /**
+     * set the tabletop state of the player
+     *
+     * @param active if the player is in tabletop mode
+     * @param reach  extra reach the player would like to have
+     */
+    public void setTabletop(boolean active, float reach) {
+        this.tabletop = active;
+        this.tabletopReach = reach;
+        this.updateTabletopReach();
+    }
+
+    /**
+     * @return if the player is in tabletop mode
+     */
+    public boolean isTabletop() {
+        return this.tabletop;
+    }
+
+    /**
+     * gives tabletop players extra reach, so they can interact with the whole tabletop, limited by the server config.
+     * the modifiers are transient, so this is called every tick to add them again after a respawn or config change
+     */
+    private void updateTabletopReach() {
+        double reach = this.tabletop && ServerConfig.TABLETOP_ALLOWED.get() ?
+            Mth.clamp(this.tabletopReach, 0.0, ServerConfig.TABLETOP_MAX_REACH.get()) : 0.0;
+        for (Holder<Attribute> attribute : TABLETOP_REACH_ATTRIBUTES) {
+            AttributeInstance instance = this.player.getAttribute(attribute);
+            if (instance == null) {
+                continue;
+            }
+            if (reach > 0.0) {
+                AttributeModifier current = instance.getModifier(TABLETOP_REACH_ID);
+                if (current == null || current.amount() != reach) {
+                    instance.addOrUpdateTransientModifier(
+                        new AttributeModifier(TABLETOP_REACH_ID, reach, AttributeModifier.Operation.ADD_VALUE));
+                }
+            } else if (instance.hasModifier(TABLETOP_REACH_ID)) {
+                instance.removeModifier(TABLETOP_REACH_ID);
+            }
+        }
+    }
+
+    /**
      * @return if the player is using seated VR
      */
     public boolean isSeated() {
@@ -280,6 +339,7 @@ public class ServerVivePlayer {
     }
 
     public void tick() {
+        this.updateTabletopReach();
         if (this.aimReset > 0 && --this.aimReset == 0) {
             this.aimDirOverride = null;
             this.aimPosOverride = null;

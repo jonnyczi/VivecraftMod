@@ -65,6 +65,37 @@ public record ClipBox(double minX, double minY, double minZ, double maxX, double
         };
     }
 
+    /**
+     * intersects a ray with this box
+     *
+     * @param from start of the ray
+     * @param dir  direction of the ray, doesn't need to be normalized
+     * @return {enter, exit} as multiples of {@code dir} from {@code from}, enter is 0 if the ray starts inside the box,
+     * or {@code null} if the ray misses the box, or the box is behind it
+     */
+    public double[] intersectRay(Vec3 from, Vec3 dir) {
+        double enter = 0.0;
+        double exit = Double.POSITIVE_INFINITY;
+        double[] origin = {from.x, from.y, from.z};
+        double[] direction = {dir.x, dir.y, dir.z};
+        double[] min = {this.minX, this.minY, this.minZ};
+        double[] max = {this.maxX, this.maxY, this.maxZ};
+        for (int axis = 0; axis < 3; axis++) {
+            if (Math.abs(direction[axis]) < 1.0E-12) {
+                // parallel to this side, needs to be between the planes
+                if (origin[axis] < min[axis] || origin[axis] > max[axis]) {
+                    return null;
+                }
+                continue;
+            }
+            double t1 = (min[axis] - origin[axis]) / direction[axis];
+            double t2 = (max[axis] - origin[axis]) / direction[axis];
+            enter = Math.max(enter, Math.min(t1, t2));
+            exit = Math.min(exit, Math.max(t1, t2));
+        }
+        return enter <= exit ? new double[]{enter, exit} : null;
+    }
+
     public double sizeX() {
         return this.maxX - this.minX;
     }
