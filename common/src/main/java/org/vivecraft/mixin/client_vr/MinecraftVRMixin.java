@@ -59,7 +59,6 @@ import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client.gui.VivecraftClickEvent;
 import org.vivecraft.client.gui.framework.screens.ChangeableParentScreen;
 import org.vivecraft.client.gui.screens.ErrorScreen;
-import org.vivecraft.client.utils.ExitWatchdog;
 import org.vivecraft.client.gui.screens.ServerVrChangesScreen;
 import org.vivecraft.client.gui.screens.UpdateScreen;
 import org.vivecraft.client.network.ClientNetworking;
@@ -193,12 +192,6 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             }
             ClientDataHolderVR.getInstance().cachedScreen = null;
         }
-    }
-
-    @Inject(method = "exitWorldAndClose", at = @At("HEAD"))
-    private void vivecraft$startExitWatchdog(CallbackInfo ci) {
-        // the game sometimes doesn't fully exit with VR, this records why
-        ExitWatchdog.start(((Minecraft) (Object) this).gameDirectory.toPath().resolve("logs"));
     }
 
     @Inject(method = "exitWorldAndClose", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;close()V"))
