@@ -59,10 +59,12 @@ server-port=25565
 motd=Vivecraft dev server ($(git -C "$ROOT" rev-parse --abbrev-ref HEAD))
 EOF
 
-# Vivecraft server config: debug logs the version handshake of every Vivecraft client, and the join messages say
-# who joined in VR, seated or non-VR. The server fills in all other settings on the first start.
+# Vivecraft server config: debug logs the version handshake of every Vivecraft client, the join messages say
+# who joined in VR, seated or non-VR, and tabletop reach is off by default on dedicated servers.
+# The server fills in all other settings on the first start.
 [ -f config/vivecraft-server-config.toml ] ||
-    printf '[general]\n\tdebug = true\n\n[messages]\n\tenabled = true\n' >config/vivecraft-server-config.toml
+    printf '[general]\n\tdebug = true\n\n[messages]\n\tenabled = true\n\n[vrChanges]\n\ttabletopAllowed = true\n' \
+        >config/vivecraft-server-config.toml
 
 echo "dev server ready in $SERVER_DIR"
 echo "start it with tools/server/run-dev-server.sh, then type 'op <name>' in its console to make a player operator"
