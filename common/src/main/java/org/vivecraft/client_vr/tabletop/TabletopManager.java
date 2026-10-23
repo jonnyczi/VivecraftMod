@@ -23,6 +23,7 @@ import org.vivecraft.client_vr.tabletop.math.TabletopFrame;
 import org.vivecraft.client_vr.tabletop.math.TabletopMapping;
 import org.vivecraft.client_vr.tabletop.math.TabletopNavigation;
 import org.vivecraft.client_vr.tabletop.math.TabletopPlacement;
+import org.vivecraft.client_vr.tabletop.render.TabletopCutFaces;
 import org.vivecraft.mod_compat_vr.shaders.ShadersHelper;
 
 import java.util.Arrays;
@@ -65,6 +66,7 @@ public class TabletopManager {
     // the settings the tabletop was last made with, changing them changes the tabletop right away
     private int appliedChunks;
     private float appliedSize;
+    private int appliedRenderDistance;
     // where the avatar was last frame, and in which level, to follow it
     private Vec3 lastAvatar;
     private Level lastLevel;
@@ -103,8 +105,9 @@ public class TabletopManager {
         }
         // the grips hold the tabletop instead of switching hotbar slots
         boolean grab = this.active && MC.gui.screen() == null;
-        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyHotbarNext).setEnabled(!this.active);
-        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyHotbarPrev).setEnabled(!this.active);
+        if (this.active) {
+            this.setHotbarScrolling(false);
+        }
         this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab).setEnabled(ControllerType.LEFT, grab);
         // when the right hand touches the hotbar, its grip selects the slot instead
         this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab).setEnabled(ControllerType.RIGHT,
@@ -135,11 +138,16 @@ public class TabletopManager {
      */
     private void applySettings() {
         VRSettings settings = this.dh.vrSettings;
-        if (settings.tabletopChunks == this.appliedChunks && settings.tabletopFrameSize == this.appliedSize) {
+        // the render distance limits how many chunks can be shown
+        int renderDistance = MC.options.getEffectiveRenderDistance();
+        if (settings.tabletopChunks == this.appliedChunks && settings.tabletopFrameSize == this.appliedSize &&
+            renderDistance == this.appliedRenderDistance)
+        {
             return;
         }
         this.appliedChunks = settings.tabletopChunks;
         this.appliedSize = settings.tabletopFrameSize;
+        this.appliedRenderDistance = renderDistance;
         this.frame = new TabletopFrame(this.frame.center(), this.frame.yaw(), settings.tabletopFrameSize,
             settings.tabletopFrameSize, settings.tabletopFrameSize * 0.5F, settings.tabletopFrameSize * 0.15F);
         this.blocksPerMeter = blocksPerMeter(settings);
@@ -226,6 +234,14 @@ public class TabletopManager {
     }
 
     /**
+     * the grips switch hotbar slots outside of tabletop mode
+     */
+    private void setHotbarScrolling(boolean enabled) {
+        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyHotbarNext).setEnabled(enabled);
+        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyHotbarPrev).setEnabled(enabled);
+    }
+
+    /**
      * shader packs can be turned on at any time, this leaves tabletop mode before a frame is rendered with them.
      * needs to be called every frame, before the tabletop mapping is used
      */
@@ -273,6 +289,7 @@ public class TabletopManager {
         this.blocksPerMeter = blocksPerMeter(settings);
         this.appliedChunks = settings.tabletopChunks;
         this.appliedSize = settings.tabletopFrameSize;
+        this.appliedRenderDistance = MC.options.getEffectiveRenderDistance();
         this.frame = new TabletopFrame(center, yaw, settings.tabletopFrameSize, settings.tabletopFrameSize,
             settings.tabletopFrameSize * 0.5F, settings.tabletopFrameSize * 0.15F);
 
@@ -299,6 +316,9 @@ public class TabletopManager {
         // don't keep the old level alive after leaving it
         this.lastLevel = null;
         this.lastAvatar = null;
+        TabletopPick.reset();
+        TabletopCutFaces.reset();
+        this.setHotbarScrolling(true);
         // put the room back around the player
         this.dh.vrPlayer.leaveTabletop();
         VRSettings.LOGGER.info("Vivecraft: left tabletop mode");

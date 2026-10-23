@@ -73,6 +73,19 @@ public class TabletopCutFaces {
      * @param poseStack pose stack at the camera
      * @param camera    camera position for the current pass
      */
+    /**
+     * forgets the built cut faces, when leaving tabletop mode
+     */
+    public static void reset() {
+        FACES.clear();
+        BUILT_FOR = "";
+        BUILT_AT = Long.MIN_VALUE;
+        VERTICES = new float[0];
+        VERTEX_COLORS = new int[0];
+        VERTEX_COUNT = 0;
+        VERTICES_FOR = null;
+    }
+
     public static void submit(SubmitNodeCollector output, PoseStack poseStack, Vec3 camera) {
         if (!TabletopManager.isActive() || MC.level == null) {
             return;
