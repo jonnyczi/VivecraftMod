@@ -16,11 +16,11 @@ import org.vivecraft.client_vr.tabletop.math.ClipBox;
 public class TabletopBorder {
 
     // width of the flat rim and height of the edge below it, in meters, in the room
-    private static final float RIM_WIDTH = 0.015F;
-    private static final float EDGE_HEIGHT = 0.012F;
+    private static final float RIM_WIDTH = 0.008F;
+    private static final float EDGE_HEIGHT = 0.006F;
 
-    private static final int COLOR_RIM = 0xD2E6E6E6;
-    private static final int COLOR_EDGE = 0xD2404040;
+    private static final int COLOR_RIM = 0xA0AAAAAA;
+    private static final int COLOR_EDGE = 0xA0303030;
 
     /**
      * submits the border for the current pass
