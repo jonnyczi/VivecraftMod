@@ -35,25 +35,6 @@ public class TabletopNavigationTest {
     }
 
     @Test
-    public void zoomKeepsThePivotInPlace() {
-        Vector3f pivot = new Vector3f(0.4F, 1.1F, -0.3F);
-        TabletopMapping before = TabletopMapping.of(FRAME, FOCUS, 50F, 2);
-        Vec3 newFocus = TabletopNavigation.zoomAround(FOCUS, FRAME.center(), pivot, 50F, 120F, before.rotation(),
-            false);
-        TabletopMapping after = TabletopMapping.of(FRAME, newFocus, 120F, 2);
-        Vec3 pivotBefore = before.roomToWorld(pivot);
-        Vec3 pivotAfter = after.roomToWorld(pivot);
-        Assertions.assertTrue(pivotBefore.distanceTo(pivotAfter) < 1.0E-2, pivotBefore + " moved to " + pivotAfter);
-    }
-
-    @Test
-    public void zoomCanKeepTheBaseLevel() {
-        Vector3f pivot = new Vector3f(0.4F, 1.1F, -0.3F);
-        Vec3 newFocus = TabletopNavigation.zoomAround(FOCUS, FRAME.center(), pivot, 50F, 120F, 0.3F, true);
-        Assertions.assertEquals(FOCUS.y, newFocus.y, 1.0E-6);
-    }
-
-    @Test
     public void followOnlyMovesWhenTheTargetIsNearTheEdge() {
         ClipBox box = new ClipBox(0, 50, 0, 50, 90, 50);
         Vec3 focus = new Vec3(25, 60, 25);

@@ -55,17 +55,6 @@ public record ClipBox(double minX, double minY, double minZ, double maxX, double
     }
 
     /**
-     * @return the box relative to {@code camera}, as {minX, minY, minZ, maxX, maxY, maxZ} for upload to the gpu.
-     * the subtraction is done in double precision, so that it stays accurate far away from the world origin
-     */
-    public float[] relativeTo(Vec3 camera) {
-        return new float[]{
-            (float) (this.minX - camera.x), (float) (this.minY - camera.y), (float) (this.minZ - camera.z),
-            (float) (this.maxX - camera.x), (float) (this.maxY - camera.y), (float) (this.maxZ - camera.z)
-        };
-    }
-
-    /**
      * intersects a ray with this box
      *
      * @param from start of the ray
@@ -98,10 +87,6 @@ public record ClipBox(double minX, double minY, double minZ, double maxX, double
 
     public double sizeX() {
         return this.maxX - this.minX;
-    }
-
-    public double sizeY() {
-        return this.maxY - this.minY;
     }
 
     public double sizeZ() {

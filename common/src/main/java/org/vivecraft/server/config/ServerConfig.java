@@ -133,7 +133,7 @@ public class ServerConfig {
      * @return payload that tells clients if they get extra reach in tabletop mode
      */
     public static TabletopPayloadS2C getTabletopPayload() {
-        return new TabletopPayloadS2C(TABLETOP_ALLOWED.get(), TABLETOP_MAX_REACH.get().floatValue());
+        return new TabletopPayloadS2C(TABLETOP_ALLOWED.get());
     }
 
     public static void init(ConfigSpec.CorrectionListener listener) {
@@ -332,8 +332,7 @@ public class ServerConfig {
             .setPacketFunction(v -> getTabletopPayload());
         TABLETOP_MAX_REACH = BUILDER
             .push("tabletopMaxReach")
-            .defineInRange(128.0, 0.0, 512.0)
-            .setPacketFunction(v -> getTabletopPayload());
+            .defineInRange(128.0, 0.0, 512.0);
         TABLETOP_DROPS_TO_INVENTORY = BUILDER
             .push("tabletopDropsToInventory")
             .define(true);
