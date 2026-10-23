@@ -73,6 +73,12 @@ public class TabletopNavigationClientGameTest implements FabricClientGameTest {
             check(focus(context).distanceTo(scrolled) < 1.0E-6,
                 "the world shouldn't follow an avatar that doesn't move");
 
+            // scrolled into the empty sky, the border still shows where the tabletop is
+            context.runOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.setFocus(scrolled.add(0, 250, 0)));
+            context.waitTicks(3);
+            VRScreenshot.takeLeftEye(context, "tabletop_empty_border");
+            context.runOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.setFocus(scrolled));
+
             // a cave inside a block of stone, underground the tabletop shows a cross-section just above the avatar
             run(singleplayer, "fill %d 160 %d %d 170 %d minecraft:stone", x + 45, z - 3, x + 51, z + 3);
             run(singleplayer, "fill %d 161 %d %d 162 %d minecraft:air", x + 48, z, x + 48, z);

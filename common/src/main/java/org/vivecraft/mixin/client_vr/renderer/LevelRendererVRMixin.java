@@ -44,6 +44,7 @@ import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.render.helpers.VREffectsHelper;
 import org.vivecraft.client_vr.render.renderstates.VRRenderState;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.render.TabletopBorder;
 import org.vivecraft.client_vr.tabletop.render.TabletopCutFaces;
 import org.vivecraft.client_vr.tabletop.render.TabletopLaser;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
@@ -198,6 +199,7 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
     {
         if (RenderPassType.isVanilla()) return;
         TabletopCutFaces.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
+        TabletopBorder.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
         TabletopLaser.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
     }
 
