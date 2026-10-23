@@ -54,6 +54,9 @@ public class TabletopManager {
     private float blocksPerMeter;
 
     private final TabletopGrab grab = new TabletopGrab();
+    // the settings the tabletop was last made with, changing them changes the tabletop right away
+    private int appliedChunks;
+    private float appliedSize;
     // where the avatar was last frame, and in which level, to follow it
     private Vec3 lastAvatar;
     private Level lastLevel;
@@ -96,8 +99,34 @@ public class TabletopManager {
         this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab).setEnabled(ControllerType.RIGHT,
             grab && this.dh.hotbarModule.hotbar < 0);
         if (this.active) {
+            this.applySettings();
             this.update();
         }
+    }
+
+    /**
+     * makes the tabletop as wide and big as the settings say, when they changed, keeps where it is in the room
+     */
+    private void applySettings() {
+        VRSettings settings = this.dh.vrSettings;
+        if (settings.tabletopChunks == this.appliedChunks && settings.tabletopFrameSize == this.appliedSize) {
+            return;
+        }
+        this.appliedChunks = settings.tabletopChunks;
+        this.appliedSize = settings.tabletopFrameSize;
+        this.frame = new TabletopFrame(this.frame.center(), this.frame.yaw(), settings.tabletopFrameSize,
+            settings.tabletopFrameSize, settings.tabletopFrameSize * 0.5F, settings.tabletopFrameSize * 0.15F);
+        this.blocksPerMeter = blocksPerMeter(settings);
+    }
+
+    /**
+     * the tabletop shows as many chunks as set, but not more than the render distance has loaded
+     *
+     * @return the zoom for the tabletop size and width in the settings
+     */
+    private static float blocksPerMeter(VRSettings settings) {
+        int chunks = Math.min(settings.tabletopChunks, Math.max(1, 2 * MC.options.getEffectiveRenderDistance() - 2));
+        return chunks * 16.0F / settings.tabletopFrameSize;
     }
 
     /**
@@ -188,7 +217,9 @@ public class TabletopManager {
             (float) head.z + forward.z * FRAME_DISTANCE);
 
         VRSettings settings = this.dh.vrSettings;
-        this.blocksPerMeter = settings.tabletopBlocksPerMeter;
+        this.blocksPerMeter = blocksPerMeter(settings);
+        this.appliedChunks = settings.tabletopChunks;
+        this.appliedSize = settings.tabletopFrameSize;
         this.frame = new TabletopFrame(center, yaw, settings.tabletopFrameSize, settings.tabletopFrameSize,
             settings.tabletopFrameSize * 0.5F, settings.tabletopFrameSize * 0.15F);
 

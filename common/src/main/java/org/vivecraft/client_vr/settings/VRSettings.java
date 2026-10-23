@@ -282,8 +282,8 @@ public class VRSettings {
     public float worldScale = 1.0f;
     @SettingField(VrOptions.VIEW_MODE)
     public ViewMode viewMode = ViewMode.VR;
-    @SettingField(VrOptions.TABLETOP_BLOCKS_PER_METER)
-    public float tabletopBlocksPerMeter = 40F;
+    @SettingField(VrOptions.TABLETOP_CHUNKS)
+    public int tabletopChunks = 3;
     @SettingField(VrOptions.TABLETOP_FRAME_SIZE)
     public float tabletopFrameSize = 1.0F;
     @SettingField(VrOptions.TABLETOP_PASSTHROUGH)
@@ -2552,7 +2552,13 @@ public class VRSettings {
             }
         },
         VIEW_MODE, // life size VR or tabletop
-        TABLETOP_BLOCKS_PER_METER(10F, 200F, 5F, 0), // how many blocks fit in one meter in tabletop mode
+        TABLETOP_CHUNKS(1, 16, 1, 0) { // how many chunks wide the tabletop is
+            @Override
+            String getDisplayString(String prefix, Object value) {
+                int chunks = (int) value;
+                return prefix + I18n.get("vivecraft.options.tabletop.chunks", chunks, chunks * 16);
+            }
+        },
         TABLETOP_FRAME_SIZE(0.4F, 2.0F, 0.1F, 1), // size of the tabletop frame in meters
         TABLETOP_PASSTHROUGH(OptionType.BOOLEAN), // show the real room around the table, if the headset supports it
         TABLETOP_REACH(0.0F, 256.0F, 8.0F, 0), // extra reach in blocks around the player in tabletop mode, the server can limit it

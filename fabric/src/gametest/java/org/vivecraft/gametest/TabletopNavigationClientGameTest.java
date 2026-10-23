@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
+import org.vivecraft.client.gui.settings.GuiTabletopSettings;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.ViewMode;
@@ -93,6 +94,29 @@ public class TabletopNavigationClientGameTest implements FabricClientGameTest {
             checkCentered(context, "after respawning");
             checkAvatarInside(context, "after respawning");
 
+            // the width and size settings change the tabletop right away
+            context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.tabletopChunks = 2);
+            context.waitTicks(3);
+            check(Math.abs(clipWidth(context) - 32.0) < 0.01, "2 chunks should be 32 blocks wide, not " + clipWidth(context));
+            context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.tabletopFrameSize = 1.5F);
+            context.waitTicks(3);
+            check(Math.abs(context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getFrame().sizeX()) - 1.5F) < 0.01F &&
+                    Math.abs(clipWidth(context) - 32.0) < 0.01,
+                "a bigger tabletop should show the same 32 blocks");
+
+            // the settings screen opens in tabletop mode
+            context.runOnClient(mc -> mc.gui.setScreen(new GuiTabletopSettings(null)));
+            context.waitTicks(10);
+            check(context.computeOnClient(mc -> mc.gui.screen() instanceof GuiTabletopSettings),
+                "the tabletop settings should open");
+            VRScreenshot.takeLeftEye(context, "tabletop_settings_screen");
+            context.runOnClient(mc -> {
+                mc.gui.setScreen(null);
+                ClientDataHolderVR.getInstance().vrSettings.tabletopChunks = 3;
+                ClientDataHolderVR.getInstance().vrSettings.tabletopFrameSize = 1.0F;
+            });
+            context.waitTicks(3);
+
             // changing the dimension centers it on the avatar in the new level
             singleplayer.getServer().runCommand("gamemode creative @a");
             singleplayer.getServer().runCommand("execute in minecraft:the_nether run tp @a 0.5 70 0.5");
@@ -120,6 +144,10 @@ public class TabletopNavigationClientGameTest implements FabricClientGameTest {
         singleplayer.getServer().runCommand("tp @a %s %s %s".formatted(x, y, z));
         context.waitFor(mc -> mc.player.position().distanceTo(new Vec3(x, y, z)) < 0.01, 100);
         context.waitTicks(3);
+    }
+
+    private static double clipWidth(ClientGameTestContext context) {
+        return context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getClipBox().sizeX());
     }
 
     private static Vec3 focus(ClientGameTestContext context) {
