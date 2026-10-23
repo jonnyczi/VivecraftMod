@@ -89,6 +89,15 @@
           "use_depth_buffer": true
         }
       ],
+      "uniforms": {
+        "VrTransparencyConfig": [
+          {
+            "name": "KeepAlpha",
+            "type": "float",
+            "value": 0.0
+          }
+        ]
+      },
       "output": "final"
     },
     {

@@ -20,6 +20,11 @@ uniform sampler2D VrUnoccludedDepthSampler;
 uniform sampler2D VrHandsSampler;
 uniform sampler2D VrHandsDepthSampler;
 
+layout(std140) uniform VrTransparencyConfig {
+    // 1.0 keeps the alpha of the layers, for a transparent background behind the world, 0.0 makes the image opaque
+    float KeepAlpha;
+};
+
 in vec2 texCoord;
 
 vec4 color_layers[9] = vec4[](vec4(0.0), vec4(0.0), vec4(0.0), vec4(0.0), vec4(0.0), vec4(0.0), vec4(0.0), vec4(0.0), vec4(0.0));
@@ -58,7 +63,8 @@ vec3 blend(vec3 dst, vec4 src) {
 }
 
 void main() {
-    color_layers[0] = vec4(texture(MainSampler, texCoord).rgb, 1.0);
+    vec4 mainColor = texture(MainSampler, texCoord);
+    color_layers[0] = vec4(mainColor.rgb, KeepAlpha > 0.5 ? mainColor.a : 1.0);
     depth_layers[0] = texture(MainDepthSampler, texCoord).r;
     active_layers = 1;
 
@@ -78,9 +84,11 @@ void main() {
 
 
     vec3 texelAccum = color_layers[0].rgb;
+    float alphaAccum = color_layers[0].a;
     for (int ii = 1; ii < active_layers; ++ii) {
         texelAccum = blend(texelAccum, color_layers[ii]);
+        alphaAccum = alphaAccum * (1.0 - color_layers[ii].a) + color_layers[ii].a;
     }
 
-    fragColor = vec4(texelAccum.rgb, 1.0);
+    fragColor = vec4(texelAccum.rgb, KeepAlpha > 0.5 ? alphaAccum : 1.0);
 }
