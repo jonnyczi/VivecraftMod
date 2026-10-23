@@ -1,6 +1,5 @@
 package org.vivecraft.client_vr.tabletop.render;
 
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
@@ -18,19 +17,13 @@ public class TabletopCulling {
     private static final double PARTICLE_MARGIN = 1.0;
 
     /**
-     * in tabletop mode the camera is far away from the world, so the regular distance culling would hide most entities,
-     * use the clip box instead
-     *
-     * @param entity  entity to check
-     * @param frustum view frustum of the current pass
-     * @return if the entity should be rendered
+     * @param entity entity to check
+     * @return if the entity is at least partly inside the tabletop clip box
      */
-    public static boolean isEntityVisible(Entity entity, Frustum frustum) {
+    public static boolean isOnTabletop(Entity entity) {
         // a bit bigger, since models can extend past the hitbox
         AABB aabb = entity.getBoundingBox().inflate(0.5);
-        ClipBox box = getBox();
-        return box.intersects(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ) &&
-            frustum.isVisible(aabb);
+        return getBox().intersects(aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ);
     }
 
     /**

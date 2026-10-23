@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.extract.LevelExtractor;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.BlockOutlineRenderState;
@@ -21,6 +22,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,12 +49,23 @@ public class LevelExtractorVRMixin {
             (ClientDataHolderVR.getInstance().vrSettings.shouldRenderSelf && entity == Minecraft.getInstance().player);
     }
 
-    @ModifyReturnValue(method = "isEntityVisible", at = @At("RETURN"))
-    private boolean vivecraft$tabletopEntityCulling(boolean visible, @Local(argsOnly = true) Entity entity,
-        @Local(argsOnly = true) Frustum frustum)
+    @WrapOperation(method = "isEntityVisible", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;shouldRender(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/client/renderer/culling/Frustum;DDD)Z"))
+    private boolean vivecraft$tabletopEntityDistance(
+        EntityRenderDispatcher instance, Entity entity, Frustum frustum, double camX, double camY, double camZ,
+        Operation<Boolean> original)
     {
-        // the camera is far away in tabletop mode, so cull by the clip box instead of the distance
-        return TabletopManager.isActive() ? TabletopCulling.isEntityVisible(entity, frustum) : visible;
+        if (TabletopManager.isActive()) {
+            // the camera is far away from the world in tabletop mode, the render distance counts from the tabletop
+            Vec3 focus = ClientDataHolderVR.getInstance().tabletop.getFocus();
+            return original.call(instance, entity, frustum, focus.x, focus.y, focus.z);
+        }
+        return original.call(instance, entity, frustum, camX, camY, camZ);
+    }
+
+    @ModifyReturnValue(method = "isEntityVisible", at = @At("RETURN"))
+    private boolean vivecraft$tabletopEntityCulling(boolean visible, @Local(argsOnly = true) Entity entity) {
+        // only entities on the tabletop are shown
+        return visible && (!TabletopManager.isActive() || TabletopCulling.isOnTabletop(entity));
     }
 
     @WrapOperation(method = "extractVisibleBlockEntities", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher;tryExtractRenderState(Lnet/minecraft/world/level/block/entity/BlockEntity;FLnet/minecraft/client/renderer/feature/ModelFeatureRenderer$CrumblingOverlay;Z)Lnet/minecraft/client/renderer/blockentity/state/BlockEntityRenderState;"))
