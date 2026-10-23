@@ -1,6 +1,10 @@
 package org.vivecraft.client_vr.tabletop;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.SectionPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
@@ -14,6 +18,10 @@ import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_vr.tabletop.math.ClipBox;
 import org.vivecraft.client_vr.tabletop.math.TabletopFrame;
 import org.vivecraft.client_vr.tabletop.math.TabletopMapping;
+import org.vivecraft.client_vr.tabletop.math.TabletopNavigation;
+import org.vivecraft.client_vr.tabletop.math.TabletopPlacement;
+
+import java.util.Arrays;
 
 /**
  * state of the tabletop mode, where the world is shown as a small diorama in the room.
@@ -27,6 +35,12 @@ public class TabletopManager {
     private static final float FRAME_DISTANCE = 0.6F;
     private static final float FRAME_BELOW_HEAD = 0.65F;
     private static final float MIN_FRAME_HEIGHT = 0.3F;
+    // the world scrolls when the avatar walks closer than this part of the width to an edge
+    private static final double FOLLOW_EDGE = 0.25;
+    // moving further than this in one frame is a teleport, the tabletop centers on the avatar again
+    private static final double TELEPORT_DISTANCE = 8.0;
+    // grid of surface samples for choosing the base height, per side
+    private static final int SURFACE_SAMPLES = 9;
 
     private final ClientDataHolderVR dh;
 
@@ -40,6 +54,9 @@ public class TabletopManager {
     private float blocksPerMeter;
 
     private final TabletopGrab grab = new TabletopGrab();
+    // where the avatar was last frame, and in which level, to follow it
+    private Vec3 lastAvatar;
+    private Level lastLevel;
 
     // derived from the above, updated with update()
     private TabletopMapping mapping;
@@ -84,12 +101,15 @@ public class TabletopManager {
     }
 
     /**
-     * moves the tabletop with the grips, called every frame, so it follows the hands smoothly
+     * lets the world follow the avatar and moves the tabletop with the grips, called every frame, so both are smooth
+     *
+     * @param partialTick partial tick of the frame, for the avatar position
      */
-    public void updateGrab() {
+    public void updateFrame(float partialTick) {
         if (!this.active || MC.player == null || MC.level == null) {
             return;
         }
+        this.follow(MC.player.getPosition(partialTick));
         boolean allowed = MC.gui.screen() == null;
         // room positions of the controllers this frame
         VRData room = new VRData(Vec3.ZERO, 1.0F, 1.0F, 0.0F);
@@ -99,6 +119,55 @@ public class TabletopManager {
             allowed && VivecraftVRMod.INSTANCE.keyTabletopGrab.isDown(ControllerType.RIGHT),
             MC.player.position(), Math.max(0, MC.options.getEffectiveRenderDistance() - 1) * 16.0,
             MC.level.getMinY(), MC.level.getMaxY());
+    }
+
+    /**
+     * the world scrolls when the avatar walks close to an edge, but only while it moves and the world isn't held, so
+     * the world can be dragged away from the avatar to look around.
+     * after a teleport, a respawn or a dimension change the tabletop centers on the avatar again
+     */
+    private void follow(Vec3 avatar) {
+        if (MC.level != this.lastLevel || this.lastAvatar == null ||
+            avatar.distanceTo(this.lastAvatar) > TELEPORT_DISTANCE)
+        {
+            this.grab.reset();
+            this.setFocus(this.placeFocus(avatar));
+        } else if (!this.grab.isHolding() && avatar.distanceToSqr(this.lastAvatar) > 1.0E-8) {
+            // follow the middle of the avatar, so its feet and head stay inside
+            double halfHeight = TabletopPlacement.AVATAR_HEIGHT * 0.5;
+            Vec3 margin = new Vec3(FOLLOW_EDGE * this.clipBox.sizeX(), halfHeight + TabletopPlacement.FEET_ROOM,
+                FOLLOW_EDGE * this.clipBox.sizeZ());
+            Vec3 focus = TabletopNavigation.follow(this.focus, this.clipBox, avatar.add(0.0, halfHeight, 0.0), margin);
+            if (!focus.equals(this.focus)) {
+                this.setFocus(focus);
+            }
+        }
+        this.lastAvatar = avatar;
+        this.lastLevel = MC.level;
+    }
+
+    /**
+     * @return the focus that shows the avatar in the middle, with the base at the height of the surrounding ground
+     */
+    private Vec3 placeFocus(Vec3 feet) {
+        double halfWidth = 0.5 * this.blocksPerMeter * Math.max(this.frame.sizeX(), this.frame.sizeZ());
+        int[] samples = new int[SURFACE_SAMPLES * SURFACE_SAMPLES];
+        int count = 0;
+        for (int i = 0; i < SURFACE_SAMPLES; i++) {
+            for (int j = 0; j < SURFACE_SAMPLES; j++) {
+                int x = Mth.floor(feet.x + halfWidth * (2.0 * i / (SURFACE_SAMPLES - 1) - 1.0));
+                int z = Mth.floor(feet.z + halfWidth * (2.0 * j / (SURFACE_SAMPLES - 1) - 1.0));
+                // unloaded chunks report the bottom of the world
+                if (MC.level.hasChunk(SectionPos.blockToSectionCoord(x), SectionPos.blockToSectionCoord(z))) {
+                    samples[count++] = MC.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                }
+            }
+        }
+        double surfaceAtFeet = MC.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(feet.x),
+            Mth.floor(feet.z));
+        double base = TabletopPlacement.baseHeight(feet.y, surfaceAtFeet, Arrays.copyOf(samples, count),
+            this.blocksPerMeter * this.frame.heightAbove(), this.blocksPerMeter * this.frame.depthBelow());
+        return new Vec3(feet.x, base, feet.z);
     }
 
     private void enter() {
@@ -127,8 +196,10 @@ public class TabletopManager {
         float playerYaw = (float) Math.toRadians(MC.player.getYRot());
         this.quarterTurns = Math.round((float) (Math.PI - playerYaw) / (float) (Math.PI * 0.5));
 
-        // the avatar stands on the frame base
-        this.focus = MC.player.position();
+        // the avatar stands in the middle, the base shows the surrounding ground
+        this.focus = this.placeFocus(MC.player.position());
+        this.lastAvatar = MC.player.position();
+        this.lastLevel = MC.level;
 
         this.grab.reset();
         this.active = true;

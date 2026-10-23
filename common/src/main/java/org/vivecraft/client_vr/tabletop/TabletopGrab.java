@@ -81,6 +81,13 @@ public class TabletopGrab {
     }
 
     /**
+     * @return if a hand holds the tabletop right now
+     */
+    public boolean isHolding() {
+        return this.mode != Mode.NONE;
+    }
+
+    /**
      * stops the current grab, without moving anything
      */
     public void reset() {

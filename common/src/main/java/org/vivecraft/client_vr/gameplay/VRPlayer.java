@@ -307,8 +307,8 @@ public class VRPlayer {
 
     public void preRender(float partialTick) {
         if (TabletopManager.isActive()) {
-            // move the tabletop with the grips before using its mapping for this frame
-            this.dh.tabletop.updateGrab();
+            // follow the avatar and move the tabletop with the grips, before using its mapping for this frame
+            this.dh.tabletop.updateFrame(partialTick);
             // no interpolation, so that dragging the world around follows the hands without delay
             TabletopMapping mapping = this.dh.tabletop.getMapping();
             this.vrdata_world_render = new VRData(mapping.origin(), 1.0F, mapping.scale(), mapping.rotation());
