@@ -44,13 +44,13 @@ server_has_fifo() {
 # newest Vivecraft fabric jar built from this checkout, skipping sources and dev jars
 newest_vivecraft_jar() {
     ls -t "$ROOT"/build/libs/*-fabric.jar "$ROOT"/fabric/build/libs/*.jar 2>/dev/null |
-        grep -v -E -- '-(sources|dev|api)(-[a-z]+)?\.jar$' | head -1
+        grep -v -E -- '-(sources|dev|api)(-[a-z]+)?\.jar$' | head -1 || true
 }
 
 # puts a Vivecraft jar into a mods dir in place of any other Vivecraft jar, unless it's already there
 install_vivecraft_jar() {
     local old
-    old=$(ls "$2"/vivecraft*.jar 2>/dev/null | head -1)
+    old=$(ls "$2"/vivecraft*.jar 2>/dev/null | head -1 || true)
     if [ -n "$old" ] && [ "$(basename "$old")" = "$(basename "$1")" ] && cmp -s "$1" "$old"; then
         return 0
     fi
@@ -60,7 +60,7 @@ install_vivecraft_jar() {
 
 # the Vivecraft jar the server uses, so the laptop players can use exactly the same one
 server_vivecraft_jar() {
-    ls "$SERVER_DIR"/mods/vivecraft*.jar 2>/dev/null | head -1
+    ls "$SERVER_DIR"/mods/vivecraft*.jar 2>/dev/null | head -1 || true
 }
 
 lan_ip() {
