@@ -18,3 +18,6 @@ bindings and input fixes).
   `openxr/resolve_conflicts.py` resolves the known conflicts with the OpenXR branch.
 - `openxr/deploy-to-frame.sh [--launch]` installs that jar into the Prism instance on the headset over ssh, it never
   stops a running game. `openxr/frame-launch.sh` is the launcher it puts on the headset.
+- `openxr/setup-stable-instance.sh` keeps a separate stable Prism instance on the headset, listed in the Steam library
+  as "Minecraft Tabletop". Build it with `openxr/build-headset-jar.sh --committed`. The first run copies the dev
+  instance with its worlds, later runs only replace the jar, so the stable worlds are never touched by dev builds.

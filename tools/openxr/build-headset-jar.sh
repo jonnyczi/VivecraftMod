@@ -4,9 +4,16 @@
 #  1. merges new tabletop commits into tabletop-openxr, resolving the known conflicts
 #  2. applies the uncommitted changes and untracked files of this checkout on top, without committing them
 #  3. builds, the jar ends up in $XR_WORKTREE/build/libs
+# usage: tools/openxr/build-headset-jar.sh [--committed]
+#   --committed skips step 2 and keeps a copy of the jar as build/stable/vivecraft-tabletop-stable.jar,
+#   for the stable instance on the headset
 # env: XR_WORKTREE (default ../VivecraftMod-openxr next to this checkout), XR_BRANCH (default tabletop-openxr),
 #      SOURCE_BRANCH (default tabletop)
 set -euo pipefail
+COMMITTED=false
+if [ "${1:-}" = "--committed" ]; then
+    COMMITTED=true
+fi
 TOOLS=$(cd "$(dirname "$0")" && pwd)
 MAIN=$(git -C "$TOOLS" rev-parse --show-toplevel)
 XR_WORKTREE=${XR_WORKTREE:-$(dirname "$MAIN")/VivecraftMod-openxr}
@@ -57,17 +64,24 @@ if ! git merge-base --is-ancestor "$SOURCE_BRANCH" HEAD; then
     echo "merged $SOURCE_BRANCH into $XR_BRANCH"
 fi
 
-# 2. uncommitted changes, the openxr branch has no openvr_lwjgl/VRInputAction, its InputAction is changed separately
-out=$( (cd "$MAIN" && git diff HEAD) | git apply -3 \
-    --exclude=common/src/main/java/org/vivecraft/client_vr/provider/openvr_lwjgl/VRInputAction.java 2>&1 ) || true
-echo "$out" | grep -q "^error:" && { echo "$out"; echo "applying the uncommitted changes failed"; exit 3; }
-(cd "$MAIN" && git ls-files --others --exclude-standard) | while read -r f; do
-    mkdir -p "$(dirname "$f")"
-    cp "$MAIN/$f" "$f"
-done
-resolve
-fix_names
+if [ "$COMMITTED" = false ]; then
+    # 2. uncommitted changes, the openxr branch has no openvr_lwjgl/VRInputAction, its InputAction is changed separately
+    out=$( (cd "$MAIN" && git diff HEAD) | git apply -3 \
+        --exclude=common/src/main/java/org/vivecraft/client_vr/provider/openvr_lwjgl/VRInputAction.java 2>&1 ) || true
+    echo "$out" | grep -q "^error:" && { echo "$out"; echo "applying the uncommitted changes failed"; exit 3; }
+    (cd "$MAIN" && git ls-files --others --exclude-standard) | while read -r f; do
+        mkdir -p "$(dirname "$f")"
+        cp "$MAIN/$f" "$f"
+    done
+    resolve
+    fix_names
+fi
 
 # 3. build
 "$MAIN/tools/nix-gradle.sh" -C "$XR_WORKTREE" :fabric:build --console=plain | grep -E "error:|BUILD" -A3
 ls -la "$XR_WORKTREE"/build/libs/*-fabric.jar
+if [ "$COMMITTED" = true ]; then
+    mkdir -p "$XR_WORKTREE/build/stable"
+    cp "$XR_WORKTREE"/build/libs/*-fabric.jar "$XR_WORKTREE/build/stable/vivecraft-tabletop-stable.jar"
+    ls -la "$XR_WORKTREE/build/stable/vivecraft-tabletop-stable.jar"
+fi
