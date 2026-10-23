@@ -92,7 +92,6 @@ import org.vivecraft.client_vr.settings.VRHotkeys;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_xr.render_pass.RenderPassManager;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
-import org.vivecraft.common.network.packet.c2s.VRActivePayloadC2S;
 import org.vivecraft.mod_compat_vr.ReplayHelper;
 import org.vivecraft.mod_compat_vr.immersiveportals.ImmersivePortalsHelper;
 import org.vivecraft.mod_compat_vr.shaders.ShadersHelper;
@@ -906,7 +905,7 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             }
 
             // send new VR state to the server
-            ClientNetworking.sendServerPacket(new VRActivePayloadC2S(vrActive));
+            ClientNetworking.sendVRActive(vrActive);
             if (ReplayHelper.isLoaded()) {
                 // replay mod / flashback compat, on servers without the plugin
                 ReplayHelper.storeVRActive(vrActive);

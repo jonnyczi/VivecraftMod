@@ -79,7 +79,7 @@ public class MultiPlayerGameModeVRMixin {
      */
     @Unique
     private static void vivecraft$overrideTabletopAim(Player player) {
-        if (ClientNetworking.SERVER_ALLOWS_VR_SWITCHING &&
+        if (ClientNetworking.isTabletopNonVR() &&
             NetworkVersion.TABLETOP.accepts(ClientNetworking.USED_NETWORK_VERSION))
         {
             // the server handles the player like a regular player, and only uses the aim for items that aim like the
