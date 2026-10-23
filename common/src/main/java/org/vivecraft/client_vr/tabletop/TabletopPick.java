@@ -99,6 +99,16 @@ public class TabletopPick {
     }
 
     /**
+     * clears the pick, when the hand doesn't point at the world
+     *
+     * @param location location for the miss result
+     * @return a miss
+     */
+    public static HitResult none(Vec3 location) {
+        return result(Result.NONE, null, miss(location, new Vec3(0.0, -1.0, 0.0)));
+    }
+
+    /**
      * @return if {@code current} targets a different block or entity than {@code previous}
      */
     public static boolean isNewTarget(@Nullable HitResult previous, HitResult current) {

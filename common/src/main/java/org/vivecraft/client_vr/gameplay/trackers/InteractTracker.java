@@ -10,6 +10,7 @@ import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client.gui.screens.FBTCalibrationScreen;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.gameplay.interact_modules.DebugRenderModule;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.provider.ControllerType;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
 
@@ -113,6 +114,10 @@ public class InteractTracker implements DebugRenderTracker {
             Vec3 handPos = this.dh.vrPlayer.vrdata_world_pre.getController(c).getPosition();
 
             for (InteractModule module : this.modules) {
+                if (TabletopManager.isActive() && module != this.dh.hotbarModule) {
+                    // the hands are far away from the tabletop world, only the hotbar on the arm can be touched
+                    continue;
+                }
                 if (module.isActive(player, InteractionHand.values()[c], handPos)) {
                     this.activeModules[c] = module;
                     break;

@@ -82,6 +82,60 @@ public class TabletopNavigation {
     }
 
     /**
+     * the whole tabletop held with both hands: moving the hands carries it, twisting them turns it, and pulling them
+     * apart or together scales it. the same part of the world stays visible, so the zoom changes with the size
+     *
+     * @param frame          frame when the hands started holding
+     * @param blocksPerMeter zoom when the hands started holding
+     * @param leftStart      left hand room position when it started holding
+     * @param rightStart     right hand room position when it started holding
+     * @param left           current left hand room position
+     * @param right          current right hand room position
+     * @param minSize        smallest allowed frame width in meters
+     * @param maxSize        largest allowed frame width in meters
+     * @return the moved, turned and scaled frame with its zoom
+     */
+    public static Held holdWithBothHands(
+        TabletopFrame frame, float blocksPerMeter, Vector3fc leftStart, Vector3fc rightStart, Vector3fc left,
+        Vector3fc right, float minSize, float maxSize)
+    {
+        Vector3f startSpan = rightStart.sub(leftStart, new Vector3f());
+        Vector3f span = right.sub(left, new Vector3f());
+
+        // turn by how much the hands turned around the up axis, same convention as Vector3f#rotateY
+        float angle = 0F;
+        if (horizontalLength(startSpan) > 1.0E-3F && horizontalLength(span) > 1.0E-3F) {
+            angle = (float) (Math.atan2(-span.z, span.x) - Math.atan2(-startSpan.z, startSpan.x));
+        }
+
+        // scale by how much the hands moved apart, limited by the frame size
+        float scale = startSpan.length() > 1.0E-3F ? span.length() / startSpan.length() : 1F;
+        float width = Math.max(frame.sizeX(), frame.sizeZ());
+        scale = Math.max(minSize / width, Math.min(maxSize / width, scale));
+
+        // everything turns and scales around the point between the hands, and moves with it
+        Vector3f startMid = leftStart.add(rightStart, new Vector3f()).mul(0.5F);
+        Vector3f mid = left.add(right, new Vector3f()).mul(0.5F);
+        Vector3f center = frame.center().sub(startMid, new Vector3f()).mul(scale).rotateY(angle).add(mid);
+
+        return new Held(new TabletopFrame(center, frame.yaw() + angle, frame.sizeX() * scale,
+            frame.sizeZ() * scale, frame.heightAbove() * scale, frame.depthBelow() * scale),
+            blocksPerMeter / scale);
+    }
+
+    private static float horizontalLength(Vector3fc vec) {
+        return (float) Math.sqrt(vec.x() * vec.x() + vec.z() * vec.z());
+    }
+
+    /**
+     * result of {@link #holdWithBothHands}
+     *
+     * @param frame          new frame
+     * @param blocksPerMeter new zoom
+     */
+    public record Held(TabletopFrame frame, float blocksPerMeter) {}
+
+    /**
      * limits how far the focus can be moved horizontally away from {@code center}, since only chunks around the player are loaded
      *
      * @param focus       wanted world focus

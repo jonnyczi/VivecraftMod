@@ -18,8 +18,11 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
+import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.provider.MCVR;
+import org.vivecraft.client_vr.provider.ControllerType;
+import org.vivecraft.client_vr.provider.openvr_lwjgl.VRInputAction;
 import org.vivecraft.client_vr.provider.nullvr.NullVR;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.ViewMode;
@@ -116,6 +119,42 @@ public class TabletopInteractionClientGameTest implements FabricClientGameTest {
                 "the server should have placed dirt at " + target);
             VRScreenshot.takeLeftEye(context, "tabletop_placed");
 
+            // drag the world inside the frame with the right grip, the grip doesn't switch hotbar slots
+            int slot = context.computeOnClient(mc -> mc.player.getInventory().getSelectedSlot());
+            Vec3 focusBefore = context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getFocus());
+            float rotation = context.computeOnClient(
+                mc -> ClientDataHolderVR.getInstance().tabletop.getMapping().rotation());
+            float zoom = context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getBlocksPerMeter());
+            placeController(context, MCVR.RIGHT_CONTROLLER, new Vector3f(0.2F, 1.1F, -0.5F));
+            grip(context, ControllerType.RIGHT, true);
+            placeController(context, MCVR.RIGHT_CONTROLLER, new Vector3f(0.3F, 1.1F, -0.5F));
+            grip(context, ControllerType.RIGHT, false);
+            Vector3f worldMove = new Vector3f(0.1F * zoom, 0F, 0F).rotateY(rotation);
+            Vec3 expectedFocus = focusBefore.subtract(worldMove.x, worldMove.y, worldMove.z);
+            Vec3 focusAfter = context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getFocus());
+            check(focusAfter.distanceTo(expectedFocus) < 0.2,
+                "dragging should move the focus to " + expectedFocus + " but it is at " + focusAfter);
+            check(context.computeOnClient(mc -> mc.player.getInventory().getSelectedSlot()) == slot,
+                "the grip should not switch the hotbar slot in tabletop mode");
+
+            // hold the tabletop with both grips, spreading the hands makes it bigger, showing the same blocks
+            float sizeBefore = context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getFrame().sizeX());
+            placeController(context, MCVR.LEFT_CONTROLLER, new Vector3f(-0.2F, 1.1F, -0.5F));
+            placeController(context, MCVR.RIGHT_CONTROLLER, new Vector3f(0.2F, 1.1F, -0.5F));
+            grip(context, ControllerType.LEFT, true);
+            grip(context, ControllerType.RIGHT, true);
+            placeController(context, MCVR.LEFT_CONTROLLER, new Vector3f(-0.4F, 1.1F, -0.5F));
+            placeController(context, MCVR.RIGHT_CONTROLLER, new Vector3f(0.4F, 1.1F, -0.5F));
+            grip(context, ControllerType.LEFT, false);
+            grip(context, ControllerType.RIGHT, false);
+            float sizeAfter = context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getFrame().sizeX());
+            float zoomAfter = context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getBlocksPerMeter());
+            check(Math.abs(sizeAfter - sizeBefore * 2F) < 0.05F,
+                "spreading the hands should double the size from " + sizeBefore + " but it is " + sizeAfter);
+            check(Math.abs(zoomAfter - zoom * 0.5F) < 0.5F,
+                "a bigger tabletop should show the same blocks, zoom " + zoom + " became " + zoomAfter);
+            VRScreenshot.takeLeftEye(context, "tabletop_scaled");
+
             context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.viewMode = ViewMode.VR);
             context.waitFor(mc -> !TabletopManager.isActive(), 100);
             context.waitTicks(5);
@@ -158,6 +197,30 @@ public class TabletopInteractionClientGameTest implements FabricClientGameTest {
             Vector3f dir = room.sub(controller, new Vector3f()).normalize();
             Quaternionf rotation = new Quaternionf().rotationTo(new Vector3f(0F, 0F, -1F), dir);
             NullVR.get().setDevicePose(MCVR.RIGHT_CONTROLLER, controller, rotation);
+        });
+        context.waitTicks(3);
+    }
+
+    /**
+     * moves a controller to the given room position, pointing forward
+     */
+    private static void placeController(ClientGameTestContext context, int device, Vector3f position) {
+        context.runOnClient(mc -> NullVR.get().setDevicePose(device, position, new Quaternionf()));
+        context.waitTicks(3);
+    }
+
+    /**
+     * presses or releases the tabletop grab on one hand
+     */
+    private static void grip(ClientGameTestContext context, ControllerType hand, boolean down) {
+        context.runOnClient(mc -> {
+            VRInputAction action = MCVR.get().getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab);
+            if (down) {
+                action.setCurrentHand(hand);
+                action.pressBinding();
+            } else {
+                action.unpressBinding(1, hand);
+            }
         });
         context.waitTicks(3);
     }

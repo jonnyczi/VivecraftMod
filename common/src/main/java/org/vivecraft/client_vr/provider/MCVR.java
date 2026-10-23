@@ -1175,6 +1175,8 @@ public abstract class MCVR {
         this.getInputAction(MOD.keyVRInteract).setPriority(5).setEnabled(false);
         this.getInputAction(MOD.keyClimbeyGrab).setPriority(10).setEnabled(false);
         this.getInputAction(MOD.keyClimbeyJump).setPriority(20).setEnabled(false);
+        // only enabled in tabletop mode, no priority, the tabletop disables the actions it replaces itself
+        this.getInputAction(MOD.keyTabletopGrab).setEnabled(false);
         this.getInputAction(GuiHandler.KEY_KEYBOARD_CLICK).setPriority(50);
         this.getInputAction(GuiHandler.KEY_KEYBOARD_SHIFT).setPriority(50);
     }
@@ -1218,6 +1220,7 @@ public abstract class MCVR {
         this.addActionParams(map, MOD.keyVRInteract, "suggested", "boolean", VRInputActionSet.CONTEXTUAL);
         this.addActionParams(map, MOD.keyClimbeyGrab, "suggested", "boolean", null);
         this.addActionParams(map, MOD.keyClimbeyJump, "suggested", "boolean", null);
+        this.addActionParams(map, MOD.keyTabletopGrab, "suggested", "boolean", VRInputActionSet.CONTEXTUAL);
         this.addActionParams(map, GuiHandler.KEY_LEFT_CLICK, "suggested", "boolean", null);
         this.addActionParams(map, GuiHandler.KEY_SCROLL_AXIS, "optional", "vector2", null);
         this.addActionParams(map, GuiHandler.KEY_RIGHT_CLICK, "suggested", "boolean", null);

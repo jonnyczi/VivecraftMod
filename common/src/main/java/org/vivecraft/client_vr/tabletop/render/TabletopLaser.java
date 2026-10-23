@@ -37,8 +37,10 @@ public class TabletopLaser {
     public static void submit(SubmitNodeCollector output, PoseStack poseStack, Vec3 camera) {
         ClientDataHolderVR dh = ClientDataHolderVR.getInstance();
         if (!TabletopManager.isActive() || MC.player == null || MC.gui.screen() != null ||
-            dh.vrPlayer.vrdata_world_render == null || !RenderPass.isFirstPerson(dh.currentPass))
+            dh.vrPlayer.vrdata_world_render == null || !RenderPass.isFirstPerson(dh.currentPass) ||
+            dh.interactTracker.isActiveModule(dh.hotbarModule))
         {
+            // no laser while the hand selects a hotbar slot
             return;
         }
 

@@ -41,6 +41,8 @@ public class VivecraftVRMod {
         this.categoryClimbey);
     public final HandedKeyBinding keyClimbeyJump = new HandedKeyBinding("vivecraft.key.climbeyJump", -1,
         this.categoryClimbey);
+    public final HandedKeyBinding keyTabletopGrab = new HandedKeyBinding("vivecraft.key.tabletopGrab", -1,
+        this.categoryClimbey);
     public final KeyMapping keyExportWorld = new KeyMapping("vivecraft.key.exportWorld", -1,
         KeyMapping.Category.MISC);
     public final KeyMapping keyFreeMoveRotate = new KeyMapping("vivecraft.key.freeMoveRotate", -1,
@@ -183,6 +185,7 @@ public class VivecraftVRMod {
             this.hiddenKeyBindingSet.add(GuiHandler.KEY_KEYBOARD_CLICK);
             this.hiddenKeyBindingSet.add(GuiHandler.KEY_KEYBOARD_SHIFT);
             this.hiddenKeyBindingSet.add(this.keyClimbeyGrab);
+            this.hiddenKeyBindingSet.add(this.keyTabletopGrab);
             this.hiddenKeyBindingSet.add(this.keyClimbeyJump);
             this.hiddenKeyBindingSet.add(this.keyMenuButton);
             this.hiddenKeyBindingSet.add(this.keyRadialMenu);

@@ -4,10 +4,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
+import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.MethodHolder;
 import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.VRState;
+import org.vivecraft.client_vr.provider.ControllerType;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_vr.tabletop.math.ClipBox;
 import org.vivecraft.client_vr.tabletop.math.TabletopFrame;
@@ -34,6 +36,11 @@ public class TabletopManager {
     private Vec3 focus;
     // how often the world is rotated by 90° inside the frame
     private int quarterTurns;
+    // how many blocks fit in one meter, starts at the setting and changes when scaling with both hands
+    private float blocksPerMeter;
+
+    private final TabletopGrab grab = new TabletopGrab();
+
     // derived from the above, updated with update()
     private TabletopMapping mapping;
     private ClipBox clipBox;
@@ -63,9 +70,35 @@ public class TabletopManager {
                 this.exit();
             }
         }
+        // the grips hold the tabletop instead of switching hotbar slots
+        boolean grab = this.active && MC.gui.screen() == null;
+        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyHotbarNext).setEnabled(!this.active);
+        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyHotbarPrev).setEnabled(!this.active);
+        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab).setEnabled(ControllerType.LEFT, grab);
+        // when the right hand touches the hotbar, its grip selects the slot instead
+        this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab).setEnabled(ControllerType.RIGHT,
+            grab && !this.dh.interactTracker.isActiveModule(this.dh.hotbarModule));
         if (this.active) {
             this.update();
         }
+    }
+
+    /**
+     * moves the tabletop with the grips, called every frame, so it follows the hands smoothly
+     */
+    public void updateGrab() {
+        if (!this.active || MC.player == null || MC.level == null) {
+            return;
+        }
+        boolean allowed = MC.gui.screen() == null;
+        // room positions of the controllers this frame
+        VRData room = new VRData(Vec3.ZERO, 1.0F, 1.0F, 0.0F);
+        this.grab.update(this, room.getController(ControllerType.LEFT.ordinal()).getPositionF(),
+            room.getController(ControllerType.RIGHT.ordinal()).getPositionF(),
+            allowed && VivecraftVRMod.INSTANCE.keyTabletopGrab.isDown(ControllerType.LEFT),
+            allowed && VivecraftVRMod.INSTANCE.keyTabletopGrab.isDown(ControllerType.RIGHT),
+            MC.player.position(), Math.max(0, MC.options.getEffectiveRenderDistance() - 1) * 16.0,
+            MC.level.getMinY(), MC.level.getMaxY());
     }
 
     private void enter() {
@@ -86,6 +119,7 @@ public class TabletopManager {
             (float) head.z + forward.z * FRAME_DISTANCE);
 
         VRSettings settings = this.dh.vrSettings;
+        this.blocksPerMeter = settings.tabletopBlocksPerMeter;
         this.frame = new TabletopFrame(center, yaw, settings.tabletopFrameSize, settings.tabletopFrameSize,
             settings.tabletopFrameSize * 0.5F, settings.tabletopFrameSize * 0.15F);
 
@@ -96,6 +130,7 @@ public class TabletopManager {
         // the avatar stands on the frame base
         this.focus = MC.player.position();
 
+        this.grab.reset();
         this.active = true;
         this.update();
         VRSettings.LOGGER.info("Vivecraft: entered tabletop mode, frame at {}, focus {}", center, this.focus);
@@ -114,9 +149,8 @@ public class TabletopManager {
      * recalculates the mapping and clip box from the current frame, focus and zoom
      */
     public void update() {
-        float blocksPerMeter = this.dh.vrSettings.tabletopBlocksPerMeter;
-        this.mapping = TabletopMapping.of(this.frame, this.focus, blocksPerMeter, this.quarterTurns);
-        this.clipBox = ClipBox.of(this.frame, this.focus, blocksPerMeter, this.quarterTurns);
+        this.mapping = TabletopMapping.of(this.frame, this.focus, this.blocksPerMeter, this.quarterTurns);
+        this.clipBox = ClipBox.of(this.frame, this.focus, this.blocksPerMeter, this.quarterTurns);
     }
 
     /**
@@ -126,7 +160,8 @@ public class TabletopManager {
      * @return if the tracker should be processed
      */
     public boolean isTrackerAllowed(Tracker tracker) {
-        return !isActive() || tracker == this.dh.cameraTracker;
+        // the interact tracker only does the hotbar in tabletop mode
+        return !isActive() || tracker == this.dh.cameraTracker || tracker == this.dh.interactTracker;
     }
 
     /**
@@ -153,6 +188,24 @@ public class TabletopManager {
     public void setFrame(TabletopFrame frame) {
         if (this.active) {
             this.frame = frame;
+            this.update();
+        }
+    }
+
+    /**
+     * @return how many blocks fit in one meter of the frame
+     */
+    public float getBlocksPerMeter() {
+        return this.blocksPerMeter;
+    }
+
+    /**
+     * moves and scales the frame in the room, with the matching zoom, only has an effect while active
+     */
+    public void setFrameAndZoom(TabletopFrame frame, float blocksPerMeter) {
+        if (this.active) {
+            this.frame = frame;
+            this.blocksPerMeter = blocksPerMeter;
             this.update();
         }
     }

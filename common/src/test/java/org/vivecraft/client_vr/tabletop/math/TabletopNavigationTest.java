@@ -81,4 +81,60 @@ public class TabletopNavigationTest {
         Vec3 close = new Vec3(10, 64, 10);
         Assertions.assertEquals(close, TabletopNavigation.limitDistance(close, player, 100));
     }
+
+    @Test
+    public void heldWithBothHandsKeepsTheWorldAttached() {
+        TabletopFrame frame = new TabletopFrame(new Vector3f(0.2F, 0.9F, -0.6F), 0.3F, 1F, 0.8F, 0.5F, 0.15F);
+        Vec3 focus = new Vec3(100.5, 64, -20.5);
+        float blocksPerMeter = 40F;
+        int quarterTurns = 1;
+        TabletopMapping before = TabletopMapping.of(frame, focus, blocksPerMeter, quarterTurns);
+
+        // hands move, turn by about 40 degrees and spread to 1.5 times the distance
+        Vector3f leftStart = new Vector3f(-0.2F, 1.0F, -0.5F);
+        Vector3f rightStart = new Vector3f(0.4F, 1.1F, -0.5F);
+        Vector3f left = new Vector3f(-0.3F, 1.2F, -0.3F);
+        Vector3f right = new Vector3f(0.39F, 1.35F, -0.88F);
+        TabletopNavigation.Held held = TabletopNavigation.holdWithBothHands(frame, blocksPerMeter, leftStart,
+            rightStart, left, right, 0.2F, 5F);
+        TabletopMapping after = TabletopMapping.of(held.frame(), focus, held.blocksPerMeter(), quarterTurns);
+
+        float scale = right.distance(left) / rightStart.distance(leftStart);
+        Assertions.assertEquals(frame.sizeX() * scale, held.frame().sizeX(), 1.0E-4);
+        Assertions.assertEquals(blocksPerMeter / scale, held.blocksPerMeter(), 1.0E-3);
+
+        // the point between the hands still shows the same world position, the tabletop only turns around the up axis,
+        // so each hand can only stay exactly on its point when the hands keep their height difference
+        Vector3f startMid = leftStart.add(rightStart, new Vector3f()).mul(0.5F);
+        Vector3f mid = left.add(right, new Vector3f()).mul(0.5F);
+        Assertions.assertEquals(0.0, before.roomToWorld(startMid).distanceTo(after.roomToWorld(mid)), 1.0E-2,
+            "point between the hands moved in the world");
+        // and the frame center still shows the focus
+        Assertions.assertEquals(0.0, after.roomToWorld(held.frame().center()).distanceTo(focus), 1.0E-3);
+    }
+
+    @Test
+    public void levelHandsStayOnTheirPoints() {
+        TabletopFrame frame = new TabletopFrame(new Vector3f(0F, 0.9F, -0.6F), -0.4F, 1F, 1F, 0.5F, 0.15F);
+        Vec3 focus = new Vec3(-30.5, 70, 12.5);
+        TabletopMapping before = TabletopMapping.of(frame, focus, 40F, 3);
+        Vector3f leftStart = new Vector3f(-0.25F, 1.0F, -0.5F);
+        Vector3f rightStart = new Vector3f(0.25F, 1.0F, -0.6F);
+        Vector3f left = new Vector3f(-0.1F, 1.1F, -0.2F);
+        Vector3f right = new Vector3f(0.5F, 1.1F, -0.9F);
+        TabletopNavigation.Held held = TabletopNavigation.holdWithBothHands(frame, 40F, leftStart, rightStart, left,
+            right, 0.2F, 5F);
+        TabletopMapping after = TabletopMapping.of(held.frame(), focus, held.blocksPerMeter(), 3);
+        Assertions.assertEquals(0.0, before.roomToWorld(leftStart).distanceTo(after.roomToWorld(left)), 1.0E-2);
+        Assertions.assertEquals(0.0, before.roomToWorld(rightStart).distanceTo(after.roomToWorld(right)), 1.0E-2);
+    }
+
+    @Test
+    public void sizeIsLimited() {
+        TabletopFrame frame = new TabletopFrame(new Vector3f(0F, 1F, -0.6F), 0F, 1F, 1F, 0.5F, 0.15F);
+        TabletopNavigation.Held held = TabletopNavigation.holdWithBothHands(frame, 40F, new Vector3f(-0.1F, 1F, 0F),
+            new Vector3f(0.1F, 1F, 0F), new Vector3f(-2F, 1F, 0F), new Vector3f(2F, 1F, 0F), 0.3F, 3F);
+        Assertions.assertEquals(3F, held.frame().sizeX(), 1.0E-4);
+        Assertions.assertEquals(40F / 3F, held.blocksPerMeter(), 1.0E-3);
+    }
 }
