@@ -14,6 +14,8 @@ import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.ViewMode;
 import org.vivecraft.client_vr.tabletop.math.ClipBox;
+import org.vivecraft.server.ServerVRPlayers;
+import org.vivecraft.server.ServerVivePlayer;
 
 /**
  * checks where the tabletop shows the world: the base height, following the avatar, and centering again after
@@ -99,6 +101,7 @@ public class TabletopNavigationClientGameTest implements FabricClientGameTest {
             check(context.computeOnClient(mc -> TabletopManager.isActive()), "tabletop should stay on after respawning");
             checkCentered(context, "after respawning");
             checkAvatarInside(context, "after respawning");
+            checkServerState(context, singleplayer, "after respawning");
 
             // the width and size settings change the tabletop right away
             context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.tabletopChunks = 2);
@@ -131,6 +134,7 @@ public class TabletopNavigationClientGameTest implements FabricClientGameTest {
             check(context.computeOnClient(mc -> TabletopManager.isActive()), "tabletop should stay on in the nether");
             checkCentered(context, "in the nether");
             checkAvatarInside(context, "in the nether");
+            checkServerState(context, singleplayer, "in the nether");
             VRScreenshot.takeLeftEye(context, "tabletop_nether");
 
             context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.viewMode = ViewMode.VR);
@@ -174,6 +178,24 @@ public class TabletopNavigationClientGameTest implements FabricClientGameTest {
         Vec3 avatar = context.computeOnClient(mc -> mc.player.position());
         check(box.contains(avatar) && box.contains(avatar.add(0, 1.8, 0)),
             when + ": the avatar at " + avatar + " should be inside the tabletop " + box);
+    }
+
+    /**
+     * the server handles a tabletop player like a regular player with extra reach, also after the handshake that
+     * happens again on respawns and dimension changes
+     */
+    private static void checkServerState(
+        ClientGameTestContext context, TestSingleplayerContext singleplayer, String when)
+    {
+        context.waitTicks(10);
+        String state = singleplayer.getServer().computeOnServer(server -> {
+            ServerVivePlayer vivePlayer = ServerVRPlayers.getVivePlayer(
+                server.getPlayerList().getPlayers().getFirst());
+            return vivePlayer == null ? "no vivecraft player" :
+                "vr " + vivePlayer.isVR() + ", tabletop " + vivePlayer.isTabletop();
+        });
+        check(state.equals("vr false, tabletop true"),
+            when + ": the server should handle the player as non VR tabletop player, but has " + state);
     }
 
     private static void check(boolean condition, String message) {

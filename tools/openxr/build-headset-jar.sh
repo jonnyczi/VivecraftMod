@@ -60,7 +60,10 @@ if ! git merge-base --is-ancestor "$SOURCE_BRANCH" HEAD; then
     resolve
     fix_names
     git add -A
-    git -c rerere.enabled=true commit -q --no-edit
+    # a merge without conflicts is already committed
+    if git rev-parse -q --verify MERGE_HEAD >/dev/null; then
+        git -c rerere.enabled=true commit -q --no-edit
+    fi
     echo "merged $SOURCE_BRANCH into $XR_BRANCH"
 fi
 

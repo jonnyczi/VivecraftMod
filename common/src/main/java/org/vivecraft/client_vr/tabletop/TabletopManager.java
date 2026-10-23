@@ -275,8 +275,11 @@ public class TabletopManager {
         this.active = false;
         this.mapping = null;
         this.clipBox = null;
+        // don't keep the old level alive after leaving it
+        this.lastLevel = null;
+        this.lastAvatar = null;
         // put the room back around the player
-        this.dh.vrPlayer.snapRoomOriginToPlayerEntity(MC.player, true, true);
+        this.dh.vrPlayer.leaveTabletop();
         VRSettings.LOGGER.info("Vivecraft: left tabletop mode");
     }
 

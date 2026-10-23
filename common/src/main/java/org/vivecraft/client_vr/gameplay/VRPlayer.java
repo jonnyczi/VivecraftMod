@@ -411,6 +411,22 @@ public class VRPlayer {
         this.setRoomOrigin(x, y, z, reset);
     }
 
+    /**
+     * puts the room back around the player after tabletop mode. the room data still has the tabletop scale and
+     * rotation at that point, which would move the room by the head's offset from the room center times the tabletop
+     * scale, so this goes back to the life size scale first
+     */
+    public void leaveTabletop() {
+        float scale = this.rawWorldScale;
+        if (this.mc.player != null) {
+            scale *= ScaleHelper.getEntityEyeHeightScale(this.mc.player, ClientUtils.getCurrentPartialTick());
+        }
+        this.worldScale = Mth.clamp(scale, 0.025F, 100F);
+        this.vrdata_world_pre = new VRData(this.roomOrigin, this.dh.vrSettings.walkMultiplier, this.worldScale,
+            Mth.DEG_TO_RAD * this.dh.vrSettings.worldRotation);
+        this.snapRoomOriginToPlayerEntity(this.mc.player, true, true);
+    }
+
     // calculate the shortest difference between 2 angles.
     public float rotDiff_Degrees(float start, float end) {
         double x = Math.toRadians(end);

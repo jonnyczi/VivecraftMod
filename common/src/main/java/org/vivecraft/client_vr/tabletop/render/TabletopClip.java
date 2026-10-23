@@ -13,6 +13,7 @@ import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.render.ubos.TabletopClipUBO;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.math.ClipBox;
+import org.vivecraft.client_xr.render_pass.RenderPassType;
 
 /**
  * clips the terrain to the tabletop frame, by swapping the chunk pipelines for copies that discard everything outside
@@ -76,7 +77,8 @@ public class TabletopClip {
      * @return if terrain should be clipped this frame
      */
     public static boolean isActive() {
-        return ACTIVE;
+        // desktop rendering is never clipped, also when VR got turned off in tabletop mode
+        return ACTIVE && !RenderPassType.isVanilla();
     }
 
     /**

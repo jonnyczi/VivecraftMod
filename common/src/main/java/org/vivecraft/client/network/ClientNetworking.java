@@ -74,8 +74,8 @@ public class ClientNetworking {
     public static NetworkVersion USED_NETWORK_VERSION = NetworkVersion.LEGACY;
     private static float WORLDSCALE_LAST = 0.0F;
     private static float HEIGHT_LAST = 0.0F;
-    // if the player was in tabletop mode last tick
-    private static boolean TABLETOP_LAST = false;
+    // if the server was told that the player left VR for tabletop mode, only possible with VR switching
+    private static boolean TABLETOP_NON_VR_SENT = false;
     // last tabletop state that was sent to the server
     private static boolean TABLETOP_SENT = false;
     private static float TABLETOP_REACH_SENT = 0.0F;
@@ -96,7 +96,7 @@ public class ClientNetworking {
     public static void resetServerSettings() {
         WORLDSCALE_LAST = 0.0F;
         HEIGHT_LAST = 0.0F;
-        TABLETOP_LAST = false;
+        TABLETOP_NON_VR_SENT = false;
         TABLETOP_SENT = false;
         TABLETOP_REACH_SENT = 0.0F;
         SERVER_TABLETOP_ALLOWED = false;
@@ -152,6 +152,29 @@ public class ClientNetworking {
         }
     }
 
+    /**
+     * @return if the server handles the player as non VR player, because they are in tabletop mode
+     */
+    public static boolean isTabletopNonVR() {
+        return TABLETOP_NON_VR_SENT;
+    }
+
+    /**
+     * tells the server that VR got turned on or off
+     *
+     * @param vrActive if VR is active now
+     */
+    public static void sendVRActive(boolean vrActive) {
+        sendServerPacket(new VRActivePayloadC2S(vrActive));
+        // without VR there is no tabletop mode, when VR is back on the tabletop state is sent again
+        TABLETOP_NON_VR_SENT = false;
+        if (TABLETOP_SENT) {
+            TABLETOP_SENT = false;
+            TABLETOP_REACH_SENT = 0.0F;
+            sendServerPacket(new TabletopPayloadC2S(false, 0.0F));
+        }
+    }
+
     public static void sendVRPlayerPositions(VRPlayer vrPlayer) {
         if (Minecraft.getInstance().getConnection() == null ||
             Minecraft.getInstance().getCameraEntity() != Minecraft.getInstance().player)
@@ -161,11 +184,10 @@ public class ClientNetworking {
         // in tabletop mode the head and hands are far away from the avatar, so don't send them.
         // if the server allows it, it treats the player like a regular player, otherwise it keeps the last life size pose
         boolean tabletop = TabletopManager.isActive();
-        if (tabletop != TABLETOP_LAST) {
-            TABLETOP_LAST = tabletop;
-            if (SERVER_ALLOWS_VR_SWITCHING) {
-                sendServerPacket(new VRActivePayloadC2S(!tabletop));
-            }
+        // the permission for switching arrives after the version handshake, which told the server the player is in VR
+        if (SERVER_ALLOWS_VR_SWITCHING && tabletop != TABLETOP_NON_VR_SENT) {
+            TABLETOP_NON_VR_SENT = tabletop;
+            sendServerPacket(new VRActivePayloadC2S(!tabletop));
         }
         // ask for extra reach, so the whole tabletop can be reached, this needs to wait for the network version
         float tabletopReach = tabletop ? ClientDataHolderVR.getInstance().vrSettings.tabletopReach : 0.0F;
@@ -426,7 +448,7 @@ public class ClientNetworking {
     public static void overrideLook(Player player, Supplier<Vector3fc> viewSupplier) {
         // shouldn't be needed, don't tease the anti-cheat.
         // except in tabletop mode, where the server handles the player like a non vr player
-        if (SERVER_WANTS_DATA && !(TabletopManager.isActive() && SERVER_ALLOWS_VR_SWITCHING)) return;
+        if (SERVER_WANTS_DATA && !TABLETOP_NON_VR_SENT) return;
 
         Vector3fc view = viewSupplier.get();
         float pitch = (float) Math.toDegrees(Math.asin(-view.y() / view.length()));
