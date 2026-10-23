@@ -96,7 +96,11 @@ public record XRBinding(@Nullable VRInputActionSet actionSet, String key, String
 
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/squeeze/value", ActionType.VEC1));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
+            "/user/hand/left/input/squeeze/value", ActionType.VEC1));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
+            "/user/hand/right/input/squeeze/value", ActionType.VEC1));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
             "/user/hand/right/input/squeeze/value", ActionType.VEC1));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/trigger/value", ActionType.VEC1));
@@ -176,7 +180,11 @@ public record XRBinding(@Nullable VRInputActionSet actionSet, String key, String
 
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/squeeze/click", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
+            "/user/hand/left/input/squeeze/click", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
+            "/user/hand/right/input/squeeze/click", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
             "/user/hand/right/input/squeeze/click", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/trigger/click", ActionType.BOOLEAN));
@@ -252,7 +260,11 @@ public record XRBinding(@Nullable VRInputActionSet actionSet, String key, String
 
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/squeeze/click", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
+            "/user/hand/left/input/squeeze/click", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
+            "/user/hand/right/input/squeeze/click", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
             "/user/hand/right/input/squeeze/click", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/trigger/click", ActionType.BOOLEAN));
@@ -331,9 +343,13 @@ public record XRBinding(@Nullable VRInputActionSet actionSet, String key, String
 
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/squeeze/click", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
+            "/user/hand/left/input/squeeze/click", ActionType.BOOLEAN));
         set.add(
             new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
                 "/user/hand/right/input/squeeze/click", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
+            "/user/hand/right/input/squeeze/click", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/trigger/click", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
@@ -412,9 +428,13 @@ public record XRBinding(@Nullable VRInputActionSet actionSet, String key, String
 
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/squeeze/force", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
+            "/user/hand/left/input/squeeze/force", ActionType.BOOLEAN));
         set.add(
             new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
                 "/user/hand/right/input/squeeze/force", ActionType.BOOLEAN));
+        set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.tabletopGrab",
+            "/user/hand/right/input/squeeze/force", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",
             "/user/hand/left/input/trigger/click", ActionType.BOOLEAN));
         set.add(new XRBinding(null, "/actions/contextual/in/vivecraft.key.climbeyGrab",

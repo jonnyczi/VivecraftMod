@@ -55,6 +55,9 @@ public class MCOpenXR extends MCVR<XRInputAction> {
     // TODO Move to MCVR
     private XrActiveActionSet.Buffer activeActionSetsBuffer;
     private boolean isActive;
+    // if the runtime can show camera passthrough behind transparent parts of the frame
+    private boolean supportsAlphaBlend;
+    private boolean passthroughActive;
     private final HashBiMap<String, Long> paths = HashBiMap.create();
     private final long[] grip = new long[2];
     private final long[] aim = new long[2];
@@ -155,8 +158,12 @@ public class MCOpenXR extends MCVR<XRInputAction> {
         } else {
             var action = this.getInputAction(keyMapping);
             for (ControllerType controllerType : ControllerType.values()) {
-                var handedaction = action.getHandle(this.activeController[controllerType.ordinal()])
-                    .get(action.activeAction);
+                var handles = action.getHandle(this.activeController[controllerType.ordinal()]);
+                // actions without a binding for this controller have no handles
+                if (action.activeAction < 0 || action.activeAction >= handles.size()) {
+                    continue;
+                }
+                var handedaction = handles.get(action.activeAction);
                 if (handedaction.hand() != controllerType) {
                     continue;
                 }
@@ -207,11 +214,13 @@ public class MCOpenXR extends MCVR<XRInputAction> {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             XrFrameState frameState = XrFrameState.calloc(stack).type$Default();
 
+            long waitStart = System.nanoTime();
             int error = XR10.xrWaitFrame(
                 this.session,
                 XrFrameWaitInfo.calloc(stack).type$Default(),
                 frameState);
             logError(error, "xrWaitFrame", "");
+            OpenXRFrameStats.frameStarted(System.nanoTime() - waitStart);
 
             this.time = frameState.predictedDisplayTime();
             this.shouldRender = frameState.shouldRender();
@@ -584,6 +593,8 @@ public class MCOpenXR extends MCVR<XRInputAction> {
                     this.sessionChanged(XrEventDataSessionStateChanged.create(event.address()));
                 }
                 case XR10.XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED -> {
+                    VRSettings.LOGGER.info("Vivecraft: OpenXR interaction profile changed to: {}",
+                        getCurrentInteractionProfile());
                 }
                 case XR10.XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING -> {
                 }
@@ -729,9 +740,11 @@ public class MCOpenXR extends MCVR<XRInputAction> {
             int foundValidationExtensions = 0;
             PointerBuffer extensions = stack.callocPointer(
                 1 + SUPPORTED_EXTENSIONS.size() + (USE_VALIDATION ? VALIDATION_EXTENSIONS.size() : 0));
+            List<String> availableExtensions = new ArrayList<>();
             while (properties.hasRemaining()) {
                 XrExtensionProperties prop = properties.get();
                 String extensionName = prop.extensionNameString();
+                availableExtensions.add(extensionName);
                 if (extensionName.equals(graphicsExtension)) {
                     missingGraphics = false;
                     extensions.put(MemoryUtil.memAddress(MemoryStack.stackUTF8(graphicsExtension)));
@@ -744,6 +757,8 @@ public class MCOpenXR extends MCVR<XRInputAction> {
                     foundValidationExtensions++;
                 }
             }
+
+            VRSettings.LOGGER.info("Vivecraft: OpenXR runtime extensions: {}", availableExtensions);
 
             if (missingGraphics) {
                 throw new RuntimeException("OpenXR runtime is missing a supported graphics extension.");
@@ -917,6 +932,30 @@ public class MCOpenXR extends MCVR<XRInputAction> {
                 positionTracking);
             VRSettings.LOGGER.info("Headset Max Width: {}, Max Height: {}, Max Layer Count: {}", maxWidth, maxHeight,
                 maxLayerCount);
+
+            // check which environment blend modes are supported, ALPHA_BLEND shows the camera passthrough behind the frame
+            IntBuffer blendModeCount = stack.callocInt(1);
+            error = XR10.xrEnumerateEnvironmentBlendModes(this.instance, this.systemID,
+                XR10.XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, blendModeCount, null);
+            logError(error, "xrEnumerateEnvironmentBlendModes", "get count");
+            IntBuffer blendModes = stack.callocInt(blendModeCount.get(0));
+            error = XR10.xrEnumerateEnvironmentBlendModes(this.instance, this.systemID,
+                XR10.XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, blendModeCount, blendModes);
+            logError(error, "xrEnumerateEnvironmentBlendModes", "get modes");
+            List<String> blendModeNames = new ArrayList<>();
+            for (int i = 0; i < blendModeCount.get(0); i++) {
+                int blendMode = blendModes.get(i);
+                blendModeNames.add(switch (blendMode) {
+                    case XR10.XR_ENVIRONMENT_BLEND_MODE_OPAQUE -> "OPAQUE";
+                    case XR10.XR_ENVIRONMENT_BLEND_MODE_ADDITIVE -> "ADDITIVE";
+                    case XR10.XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND -> "ALPHA_BLEND";
+                    default -> "UNKNOWN(" + blendMode + ")";
+                });
+                if (blendMode == XR10.XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND) {
+                    this.supportsAlphaBlend = true;
+                }
+            }
+            VRSettings.LOGGER.info("Vivecraft: OpenXR environment blend modes: {}", blendModeNames);
 
             // Create session
             XrSessionCreateInfo info = XrSessionCreateInfo.calloc(stack);
@@ -1115,6 +1154,29 @@ public class MCOpenXR extends MCVR<XRInputAction> {
             return ControllerType.RIGHT;
         }
         return ControllerType.LEFT;
+    }
+
+    @Override
+    public boolean supportsPassthrough() {
+        return this.supportsAlphaBlend;
+    }
+
+    @Override
+    public boolean isPassthroughActive() {
+        return this.passthroughActive;
+    }
+
+    @Override
+    public void setPassthroughActive(boolean active) {
+        this.passthroughActive = active && this.supportsAlphaBlend;
+    }
+
+    /**
+     * @return the environment blend mode that frames should be submitted with
+     */
+    public int getEnvironmentBlendMode() {
+        return this.passthroughActive ? XR10.XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND :
+            XR10.XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
     }
 
     @Override

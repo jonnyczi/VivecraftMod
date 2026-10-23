@@ -142,7 +142,7 @@ public class VRShaders {
         .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
         .withPrimitiveTopology(PrimitiveTopology.QUADS)
         .withColorTargetState(
-            new ColorTargetState(Optional.empty(), GpuFormat.RGBA16_UNORM, ColorTargetState.WRITE_COLOR))
+            new ColorTargetState(Optional.empty(), GpuFormat.RGBA16_UNORM, ColorTargetState.WRITE_ALL))
         .build();
 
     public static final RenderPipeline SOLID_ALPHA_PIPELINE = RenderPipeline.builder()

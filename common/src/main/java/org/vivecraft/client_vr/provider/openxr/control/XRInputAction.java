@@ -68,11 +68,18 @@ public class XRInputAction extends InputAction {
             .get(this.activeAction);
     }
 
+    /**
+     * handed actions only look at the data of the current hand, otherwise a press on one hand counts for both
+     */
+    private boolean isOtherHand(DigitalData data) {
+        return this.isHanded() && data.hand != null && data.hand != this.currentHand;
+    }
+
     @Override
     public boolean isActive() {
         for (int i = 0; i < this.digitalData().size(); i++) {
             DigitalData data = this.digitalData().get(i);
-            if (data.type == null) {
+            if (data.type == null || this.isOtherHand(data)) {
                 continue;
             }
             switch (data.type) {
@@ -97,7 +104,7 @@ public class XRInputAction extends InputAction {
     public boolean isButtonPressed() {
         for (int i = 0; i < this.digitalData().size(); i++) {
             DigitalData data = this.digitalData().get(i);
-            if (data.type == null) {
+            if (data.type == null || this.isOtherHand(data)) {
                 continue;
             }
             switch (data.type) {
@@ -137,7 +144,7 @@ public class XRInputAction extends InputAction {
     @Override
     public boolean isButtonChanged() {
         for (int i = 0; i < this.digitalData().size(); i++) {
-            if (this.digitalData().get(i).isChanged) {
+            if (this.digitalData().get(i).isChanged && !this.isOtherHand(this.digitalData().get(i))) {
                 this.activeAction = i;
                 return true;
             }

@@ -7,6 +7,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.opengl.GL11C;
 import org.lwjgl.openxr.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VK10;
@@ -272,6 +273,7 @@ public class OpenXRStereoRenderer extends VRRenderer {
     @Override
     public void endFrame() throws RenderConfigException {
         try (MemoryStack stack = MemoryStack.stackPush()) {
+            long endFrameStart = System.nanoTime();
 
             IntBuffer indexBuffer = stack.callocInt(1);
 
@@ -288,6 +290,7 @@ public class OpenXRStereoRenderer extends VRRenderer {
                     .type$Default()
                     .timeout(XR10.XR_INFINITE_DURATION));
             MCOpenXR.logError(error, "xrWaitSwapchainImage", "");
+            long swapchainNs = System.nanoTime() - endFrameStart;
 
             // if the target format is not srgb, openxr will try to apply a gamma correction, so we need to undo that
             if (needsGammaCorrection()) {
@@ -304,6 +307,13 @@ public class OpenXRStereoRenderer extends VRRenderer {
             // copy the mc renderTargets to the openxr swapchain
             GraphicsHelper.INSTANCE.blitTextures(this.gammaCorrected,
                 this.leftFramebuffers[indexBuffer.get(0)], this.rightFramebuffers[indexBuffer.get(0)]);
+
+            // the image needs to be completely rendered before the runtime reads it, otherwise tiled GPUs can show
+            // partially rendered frames, OpenGL has no way to tell the runtime when it is done
+            RenderSystem.getDevice().createCommandEncoder().submit();
+            if (GraphicsHelper.INSTANCE.getType() == GraphicsHelper.Type.OPENGL) {
+                GL11C.glFinish();
+            }
 
             // tell the runtime that we are done with the image
             error = XR10.xrReleaseSwapchainImage(
@@ -327,6 +337,9 @@ public class OpenXRStereoRenderer extends VRRenderer {
             }
             XrCompositionLayerProjection compositionLayerProjection = XrCompositionLayerProjection.calloc(stack)
                 .type$Default()
+                // with passthrough the alpha of the image decides where the real world is visible
+                .layerFlags(this.openxr.isPassthroughActive() ?
+                    XR10.XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT : 0)
                 .space(this.openxr.xrAppSpace)
                 .views(projectionViews);
 
@@ -340,9 +353,10 @@ public class OpenXRStereoRenderer extends VRRenderer {
                 XrFrameEndInfo.calloc(stack)
                     .type$Default()
                     .displayTime(this.openxr.time)
-                    .environmentBlendMode(XR10.XR_ENVIRONMENT_BLEND_MODE_OPAQUE)
+                    .environmentBlendMode(this.openxr.getEnvironmentBlendMode())
                     .layers(layers));
             MCOpenXR.logError(error, "xrEndFrame", "");
+            OpenXRFrameStats.frameEnded(System.nanoTime() - endFrameStart, swapchainNs);
         }
     }
 

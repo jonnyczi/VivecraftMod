@@ -81,7 +81,8 @@ public class InputAction {
 
         // iterate over all actions, and check if another action has a higher priority
         for (InputAction action : ClientDataHolderVR.getInstance().vr.getInputActions()) {
-            if (action != this && action.isEnabledRaw(hand) && action.isActive() &&
+            // an unknown origin (0) can't be shared with another action
+            if (lastOrigin != 0L && action != this && action.isEnabledRaw(hand) && action.isActive() &&
                 action.getPriority() > this.getPriority() &&
                 ClientDataHolderVR.getInstance().vr.getOrigins(action).contains(lastOrigin))
             {
