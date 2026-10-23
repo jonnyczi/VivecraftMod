@@ -4,8 +4,8 @@ Helpers for developing the tabletop mode on NixOS and testing it on a Steam Fram
 
 - `nix-gradle.sh` runs gradle with JDK 25 from nixpkgs, `-C <dir>` runs it in another checkout.
 - `run-client.sh` runs the dev client on its own Xvfb display with NullVR.
-- `run-gametests.sh` runs the Fabric client gametests the same way, add `-PgametestSodium` or `-PgametestVulkan`
-  to run them with Sodium or the Vulkan backend.
+- `run-gametests.sh` runs the Fabric client gametests the same way, add `-PgametestSodium`, `-PgametestIris` or `-PgametestVulkan`
+  to run them with Sodium, Iris (with Sodium) or the Vulkan backend.
 
 ## Multiplayer dev server (`server/`)
 
