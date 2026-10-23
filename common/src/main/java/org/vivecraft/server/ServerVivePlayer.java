@@ -279,7 +279,7 @@ public class ServerVivePlayer {
 
     /**
      * gives tabletop players extra reach, so they can interact with the whole tabletop, limited by the server config.
-     * the modifiers are transient, so this is called every tick to add them again after a respawn or config change
+     * the modifiers are transient, so this is called every tick to add them again after a respawn or a config change
      */
     private void updateTabletopReach() {
         double reach = this.tabletop && ServerConfig.TABLETOP_ALLOWED.get() ?
