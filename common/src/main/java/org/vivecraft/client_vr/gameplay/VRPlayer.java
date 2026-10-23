@@ -45,6 +45,7 @@ import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_vr.utils.external.jinfinadeck;
 import org.vivecraft.client_vr.utils.external.jkatvr;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.client_vr.tabletop.math.TabletopMapping;
 import org.vivecraft.common.VRServerPerms;
 import org.vivecraft.common.utils.MathUtils;
@@ -306,9 +307,10 @@ public class VRPlayer {
     }
 
     public void preRender(float partialTick) {
+        this.dh.tabletop.leaveIfUnsupported();
         if (TabletopManager.isActive()) {
-            // move the tabletop with the grips before using its mapping for this frame
-            this.dh.tabletop.updateGrab();
+            // follow the avatar and move the tabletop with the grips, before using its mapping for this frame
+            this.dh.tabletop.updateFrame(partialTick);
             // no interpolation, so that dragging the world around follows the hands without delay
             TabletopMapping mapping = this.dh.tabletop.getMapping();
             this.vrdata_world_render = new VRData(mapping.origin(), 1.0F, mapping.scale(), mapping.rotation());
@@ -693,6 +695,10 @@ public class VRPlayer {
      * @return the direction the player should look at
      */
     public Vector3fc getRightClickLookOverride(Player entity, int c) {
+        if (TabletopManager.isActive()) {
+            // items are used towards the laser target, not where the avatar looks
+            return TabletopPick.getUseDirection(entity);
+        }
         Vector3fc out = entity.getLookAngle().toVector3f();
 
         if (this.lookAtPos != null || this.crossVec != null) {

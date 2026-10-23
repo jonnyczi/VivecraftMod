@@ -7,9 +7,12 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.BlockHitResult;
@@ -20,13 +23,16 @@ import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.gameplay.screenhandlers.GuiHandler;
 import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.provider.control.ControllerType;
 import org.vivecraft.client_vr.provider.control.InputAction;
 import org.vivecraft.client_vr.provider.nullvr.NullVR;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.client_vr.tabletop.ViewMode;
 import org.vivecraft.client_vr.tabletop.math.TabletopFrame;
+import org.vivecraft.common.utils.MathUtils;
 
 /**
  * points a controller into the tabletop in survival, and breaks and places a block there
@@ -119,6 +125,53 @@ public class TabletopInteractionClientGameTest implements FabricClientGameTest {
                 "the server should have placed dirt at " + target);
             VRScreenshot.takeLeftEye(context, "tabletop_placed");
 
+            // a water bucket pours where the laser points, even when the avatar can't see that spot
+            BlockPos wall = singleplayer.getServer().computeOnServer(server -> {
+                ServerPlayer player = server.getPlayerList().getPlayers().getFirst();
+                Vec3 eye = player.getEyePosition();
+                Vec3 top = Vec3.atCenterOf(target).add(0, 0.5, 0);
+                for (double t = 0.5; t > 0.05; t -= 0.1) {
+                    BlockPos pos = BlockPos.containing(eye.lerp(top, t));
+                    if (pos.getX() != target.getX() || pos.getZ() != target.getZ()) {
+                        server.overworld().setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
+                        return pos;
+                    }
+                }
+                throw new AssertionError("no place for a wall between the avatar and " + target);
+            });
+            check(singleplayer.getServer().computeOnServer(server -> {
+                    ServerPlayer player = server.getPlayerList().getPlayers().getFirst();
+                    BlockHitResult hit = server.overworld().clip(new ClipContext(player.getEyePosition(),
+                        Vec3.atCenterOf(target).add(0, 0.5, 0), ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE,
+                        player));
+                    return !hit.getBlockPos().equals(target) || hit.getDirection() != Direction.UP;
+                }),
+                "the wall at " + wall + " should hide the top of " + target + " from the avatar");
+            singleplayer.getServer().runCommand("item replace entity @a weapon.mainhand with minecraft:water_bucket");
+            context.waitTicks(2);
+            pointAt(context, Vec3.atCenterOf(target).add(0, 0.5, 0));
+            checkHit(context, target, Direction.UP);
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).holdBinding());
+            context.waitTicks(2);
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).stopHoldingBinding(1));
+            context.waitTicks(5);
+            check(singleplayer.getServer().computeOnServer(server ->
+                    server.overworld().getFluidState(target.above()).is(FluidTags.WATER)),
+                "the bucket should pour water on top of " + target + " where the laser points");
+            check(context.computeOnClient(mc -> mc.player.getMainHandItem().is(Items.BUCKET)),
+                "the water bucket should be empty after pouring");
+
+            // and the empty bucket picks the water up again
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).holdBinding());
+            context.waitTicks(2);
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).stopHoldingBinding(1));
+            context.waitTicks(5);
+            check(singleplayer.getServer().computeOnServer(server ->
+                    server.overworld().getFluidState(target.above()).isEmpty()),
+                "the empty bucket should pick up the water on top of " + target);
+            singleplayer.getServer().runCommand(
+                "setblock %d %d %d minecraft:air".formatted(wall.getX(), wall.getY(), wall.getZ()));
+
             // drag the world inside the frame with the right grip, the grip doesn't switch hotbar slots
             int slot = context.computeOnClient(mc -> mc.player.getInventory().getSelectedSlot());
             Vec3 focusBefore = context.computeOnClient(mc -> ClientDataHolderVR.getInstance().tabletop.getFocus());
@@ -154,6 +207,15 @@ public class TabletopInteractionClientGameTest implements FabricClientGameTest {
             check(Math.abs(zoomAfter - zoom * 0.5F) < 0.5F,
                 "a bigger tabletop should show the same blocks, zoom " + zoom + " became " + zoomAfter);
             VRScreenshot.takeLeftEye(context, "tabletop_scaled");
+
+            // touching a hotbar slot on the arm with the right hand selects it, and doesn't point at the world
+            placeController(context, MCVR.RIGHT_CONTROLLER, context.computeOnClient(mc -> hotbarSlot(mc, 4)));
+            check(context.computeOnClient(mc -> ClientDataHolderVR.getInstance().hotbarModule.hotbar) == 4,
+                "the right hand on the hotbar should touch slot 4");
+            check(context.computeOnClient(mc -> mc.hitResult.getType() == HitResult.Type.MISS &&
+                    TabletopPick.getLastResult() == TabletopPick.Result.NONE),
+                "while touching the hotbar the hand shouldn't point at the world");
+            placeController(context, MCVR.RIGHT_CONTROLLER, new Vector3f(0.3F, 1.25F, -0.5F));
 
             context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.viewMode = ViewMode.VR);
             context.waitFor(mc -> !TabletopManager.isActive(), 100);
@@ -199,6 +261,19 @@ public class TabletopInteractionClientGameTest implements FabricClientGameTest {
             NullVR.get().setDevicePose(MCVR.RIGHT_CONTROLLER, controller, rotation);
         });
         context.waitTicks(3);
+    }
+
+    /**
+     * @return room position of the middle of a hotbar slot, the same way the hotbar module places the slots
+     */
+    private static Vector3f hotbarSlot(Minecraft mc, int slot) {
+        float scale = GuiHandler.GUI_SCALE_APPLIED * (float) mc.getWindow().getGuiScale() / GuiHandler.GUI_SCALE_FACTOR_MAX;
+        Vector3f start = GuiHandler.GUI_OFFSET_LOCAL.add(-0.32F * scale, -0.38F * scale, 0F, new Vector3f());
+        GuiHandler.GUI_RENDER_ROTATION_ROOM.transformDirection(start);
+        start.add(GuiHandler.GUI_RENDER_POS_ROOM);
+        Vector3f end = GuiHandler.GUI_RENDER_ROTATION_ROOM.transformDirection(MathUtils.LEFT, new Vector3f())
+            .mul(0.64F * scale).add(start);
+        return start.lerp(end, (slot + 0.5F) / 9F, new Vector3f());
     }
 
     /**

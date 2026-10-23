@@ -24,6 +24,7 @@ import org.vivecraft.client_vr.gameplay.VRPlayer;
 import org.vivecraft.client_vr.settings.AutoCalibration;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.common.CommonDataHolder;
 import org.vivecraft.common.VRServerPerms;
 import org.vivecraft.common.network.CommonNetworkHelper;
@@ -317,6 +318,9 @@ public class ClientNetworking {
     public static Vector3fc getActiveAimDir() {
         if (AIM_DIR_OVERRIDE != null) {
             return AIM_DIR_OVERRIDE;
+        } else if (TabletopManager.isActive()) {
+            // the avatar aims at the laser target
+            return TabletopPick.getUseDirection(Minecraft.getInstance().player);
         } else {
             VRBodyPart bp = IS_LAST_BODY_PART_AIM ? getActiveBodyPart() :
                 ClientDataHolderVR.getInstance().vrSettings.aimDevice == VRSettings.AimDevice.HMD ? VRBodyPart.HEAD :
@@ -349,6 +353,9 @@ public class ClientNetworking {
             return null;
         } else if (AIM_POS_OVERRIDE != null) {
             return AIM_POS_OVERRIDE;
+        } else if (TabletopManager.isActive()) {
+            // the controllers are far away from the avatar in tabletop mode, it aims from its eyes
+            return Minecraft.getInstance().player.getEyePosition();
         } else {
             VRBodyPart bp = IS_LAST_BODY_PART_AIM ? getActiveBodyPart() :
                 ClientDataHolderVR.getInstance().vrSettings.aimDevice == VRSettings.AimDevice.HMD ? VRBodyPart.HEAD :
@@ -417,7 +424,9 @@ public class ClientNetworking {
     }
 
     public static void overrideLook(Player player, Supplier<Vector3fc> viewSupplier) {
-        if (SERVER_WANTS_DATA) return; // shouldn't be needed, don't tease the anti-cheat.
+        // shouldn't be needed, don't tease the anti-cheat.
+        // except in tabletop mode, where the server handles the player like a non vr player
+        if (SERVER_WANTS_DATA && !(TabletopManager.isActive() && SERVER_ALLOWS_VR_SWITCHING)) return;
 
         Vector3fc view = viewSupplier.get();
         float pitch = (float) Math.toDegrees(Math.asin(-view.y() / view.length()));

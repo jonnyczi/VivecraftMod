@@ -27,6 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.vivecraft.api.client.data.RenderPass;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.MethodHolder;
 import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.VRState;
@@ -245,10 +246,11 @@ public abstract class CameraVRMixin {
         }
         // the detached state is used to check if the player should be rendered, we only want that in external passes
         boolean renderSelf = RenderPass.renderPlayer(ClientDataHolderVR.getInstance().currentPass);
-        // don't render the player in first person when sleeping
-        renderSelf &= !(RenderPass.isFirstPerson(ClientDataHolderVR.getInstance().currentPass) &&
-            this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isSleeping()
-        );
+        // don't render the player in first person when sleeping, the tabletop avatar is always rendered
+        renderSelf &= TabletopManager.isActive() ||
+            !(RenderPass.isFirstPerson(ClientDataHolderVR.getInstance().currentPass) &&
+                this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isSleeping()
+            );
         // isDetached is only true if some other mod has changed it since update
         return renderSelf || isDetached;
     }

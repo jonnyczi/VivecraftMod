@@ -5,6 +5,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
@@ -12,6 +13,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 import org.vivecraft.client_vr.tabletop.math.ClipBox;
 
 import javax.annotation.Nullable;
@@ -42,6 +44,18 @@ public class TabletopPick {
     // where the ray ended on the last pick
     @Nullable
     private static Vec3 LAST_END = null;
+    // where the ray entered the tabletop on the last pick, and its direction
+    @Nullable
+    private static Vec3 LAST_START = null;
+    private static Vec3 LAST_DIR = new Vec3(0.0, -1.0, 0.0);
+
+    /**
+     * a ray in the world
+     *
+     * @param pos start of the ray
+     * @param dir direction of the ray
+     */
+    public record Aim(Vec3 pos, Vector3f dir) {}
 
     /**
      * @param player the local player, that interacts with the world
@@ -52,10 +66,13 @@ public class TabletopPick {
      */
     public static HitResult pick(LocalPlayer player, Vec3 from, Vec3 dir, ClipBox box) {
         double[] range = box.intersectRay(from, dir);
+        LAST_DIR = dir;
         if (range == null) {
+            LAST_START = null;
             return result(Result.NONE, null, miss(from.add(dir), dir));
         }
         Vec3 start = from.add(dir.scale(range[0]));
+        LAST_START = start;
         Vec3 end = from.add(dir.scale(range[1]));
 
         // a ray that enters through a cut face starts inside the cut block, which counts as a hit on that block
@@ -105,6 +122,7 @@ public class TabletopPick {
      * @return a miss
      */
     public static HitResult none(Vec3 location) {
+        LAST_START = null;
         return result(Result.NONE, null, miss(location, new Vec3(0.0, -1.0, 0.0)));
     }
 
@@ -121,6 +139,41 @@ public class TabletopPick {
                 previousEntity.getEntity() == entity.getEntity());
         }
         return false;
+    }
+
+    /**
+     * items like buckets and snowballs aim with the player's view, in tabletop mode that should go from the avatar to
+     * where the laser points, instead of where the avatar looks
+     *
+     * @param player the local player
+     * @return direction from the avatar's eyes to the laser target, or the avatar's view if the laser points nowhere
+     */
+    public static Vector3f getUseDirection(Player player) {
+        Minecraft mc = Minecraft.getInstance();
+        Vec3 target = mc.hitResult != null && mc.hitResult.getType() != HitResult.Type.MISS ?
+            mc.hitResult.getLocation() : LAST_END;
+        Vec3 eye = player.getEyePosition();
+        if (target == null || target.distanceToSqr(eye) < 1.0E-6) {
+            return player.getLookAngle().toVector3f();
+        }
+        return target.subtract(eye).normalize().toVector3f();
+    }
+
+    /**
+     * items like buckets aim like the crosshair, in tabletop mode they follow the laser through the tabletop, the same
+     * way the crosshair would
+     *
+     * @param player the local player
+     * @return where the laser enters the tabletop and its direction, or a ray that hits nothing if the laser doesn't
+     * point at the tabletop
+     */
+    public static Aim getLaserAim(Player player) {
+        if (LAST_START == null) {
+            // pointing next to the tabletop is like pointing at the sky
+            return new Aim(new Vec3(player.getX(), player.level().getMaxY() + 2.0, player.getZ()),
+                new Vector3f(0.0F, 1.0F, 0.0F));
+        }
+        return new Aim(LAST_START, LAST_DIR.normalize().toVector3f());
     }
 
     /**

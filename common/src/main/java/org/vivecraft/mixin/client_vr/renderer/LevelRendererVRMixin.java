@@ -44,6 +44,7 @@ import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.render.helpers.VREffectsHelper;
 import org.vivecraft.client_vr.render.renderstates.VRRenderState;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.render.TabletopBorder;
 import org.vivecraft.client_vr.tabletop.render.TabletopCutFaces;
 import org.vivecraft.client_vr.tabletop.render.TabletopLaser;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
@@ -59,6 +60,10 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
     @Unique
     private static final Identifier vivecraft$VR_TRANSPARENCY_POST_CHAIN_ID = Identifier.fromNamespaceAndPath(
         "vivecraft", "vrtransparency");
+    // same as the vr transparency chain, but keeps the transparent background for passthrough
+    @Unique
+    private static final Identifier vivecraft$VR_TRANSPARENCY_ALPHA_POST_CHAIN_ID = Identifier.fromNamespaceAndPath(
+        "vivecraft", "vrtransparency_alpha");
 
     @Shadow
     protected abstract void submitHitOutline(
@@ -198,6 +203,7 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
     {
         if (RenderPassType.isVanilla()) return;
         TabletopCutFaces.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
+        TabletopBorder.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
         TabletopLaser.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
     }
 
@@ -253,7 +259,8 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
         Operation<PostChain> original)
     {
         if (VRState.VR_RUNNING) {
-            return original.call(instance, vivecraft$VR_TRANSPARENCY_POST_CHAIN_ID,
+            return original.call(instance, PassthroughHelper.hasTransparentBackground() ?
+                    vivecraft$VR_TRANSPARENCY_ALPHA_POST_CHAIN_ID : vivecraft$VR_TRANSPARENCY_POST_CHAIN_ID,
                 LevelTargetBundleExtension.VR_TARGETS);
         } else {
             return original.call(instance, id, externalTargets);
