@@ -2,6 +2,7 @@ package org.vivecraft.client_vr.tabletop;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.SectionPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -9,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
 import org.vivecraft.client.VivecraftVRMod;
+import org.vivecraft.client.utils.ClientUtils;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.MethodHolder;
 import org.vivecraft.client_vr.VRData;
@@ -20,6 +22,7 @@ import org.vivecraft.client_vr.tabletop.math.TabletopFrame;
 import org.vivecraft.client_vr.tabletop.math.TabletopMapping;
 import org.vivecraft.client_vr.tabletop.math.TabletopNavigation;
 import org.vivecraft.client_vr.tabletop.math.TabletopPlacement;
+import org.vivecraft.mod_compat_vr.shaders.ShadersHelper;
 
 import java.util.Arrays;
 
@@ -83,6 +86,9 @@ public class TabletopManager {
     public void tick() {
         boolean wanted = this.dh.vrSettings.viewMode == ViewMode.TABLETOP && VRState.VR_RUNNING &&
             MC.player != null && !MethodHolder.isInMenuRoom();
+        if (wanted && this.blockedByShaders()) {
+            wanted = false;
+        }
         if (wanted != this.active) {
             if (wanted) {
                 this.enter();
@@ -197,6 +203,33 @@ public class TabletopManager {
         double base = TabletopPlacement.baseHeight(feet.y, surfaceAtFeet, Arrays.copyOf(samples, count),
             this.blocksPerMeter * this.frame.heightAbove(), this.blocksPerMeter * this.frame.depthBelow());
         return new Vec3(feet.x, base, feet.z);
+    }
+
+    /**
+     * shader packs can be turned on at any time, this leaves tabletop mode before a frame is rendered with them.
+     * needs to be called every frame, before the tabletop mapping is used
+     */
+    public void leaveIfUnsupported() {
+        if (this.active && this.blockedByShaders()) {
+            this.exit();
+        }
+    }
+
+    /**
+     * tabletop mode doesn't work with shader packs, they replace the shaders that cut the world at the tabletop
+     * edges. switches the view mode back and tells the player why
+     *
+     * @return if tabletop mode can't be used right now
+     */
+    private boolean blockedByShaders() {
+        if (!ShadersHelper.isShaderActive()) {
+            return false;
+        }
+        if (this.dh.vrSettings.viewMode == ViewMode.TABLETOP) {
+            this.dh.vrSettings.viewMode = ViewMode.VR;
+            ClientUtils.addChatMessage(Component.translatable("vivecraft.messages.tabletop.shaders"));
+        }
+        return true;
     }
 
     private void enter() {

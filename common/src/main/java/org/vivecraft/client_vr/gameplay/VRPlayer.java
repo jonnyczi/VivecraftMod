@@ -307,6 +307,7 @@ public class VRPlayer {
     }
 
     public void preRender(float partialTick) {
+        this.dh.tabletop.leaveIfUnsupported();
         if (TabletopManager.isActive()) {
             // follow the avatar and move the tabletop with the grips, before using its mapping for this frame
             this.dh.tabletop.updateFrame(partialTick);

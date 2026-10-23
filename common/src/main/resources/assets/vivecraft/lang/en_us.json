@@ -782,6 +782,7 @@
   "vivecraft.messages.tracker.leftKnee": "Left Knee",
   "vivecraft.messages.tracker.camera": "Camera",
   "vivecraft.messages.tracker.unknown": "Unknown",
+  "vivecraft.messages.tabletop.shaders": "Tabletop mode doesn't work with shader packs. Turn off shaders to use it.",
 
   "vivecraft.gui.update": "§aⓘ§r Update",
   "vivecraft.gui.vr": "VR: %s",
