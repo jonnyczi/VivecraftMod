@@ -31,7 +31,7 @@ public class TabletopDrops {
     public static <T> T collectFor(ServerPlayer player, Supplier<T> action) {
         ServerVivePlayer vivePlayer = ServerVRPlayers.getVivePlayer(player);
         if (COLLECTOR != null || vivePlayer == null || !vivePlayer.isTabletop() ||
-            !ServerConfig.TABLETOP_DROPS_TO_INVENTORY.get())
+            !ServerConfig.TABLETOP_ALLOWED.get() || !ServerConfig.TABLETOP_DROPS_TO_INVENTORY.get())
         {
             return action.get();
         }

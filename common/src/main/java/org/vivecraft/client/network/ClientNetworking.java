@@ -45,6 +45,7 @@ public class ClientNetworking {
     public static boolean DISPLAYED_CHAT_WARNING = false;
     public static boolean DISPLAYED_HEAD_AIM_WARNING = false;
     public static boolean DISPLAYED_VR_CHANGES = false;
+    public static boolean DISPLAYED_TABLETOP_REACH = false;
     public static boolean ABLE_TO_DISPLAY_CHAT_WARNINGS = false;
     public static boolean SHOW_NO_TELEPORT_MESSAGE = false;
 
@@ -134,6 +135,7 @@ public class ClientNetworking {
         DISPLAYED_CHAT_WARNING = false;
         DISPLAYED_HEAD_AIM_WARNING = false;
         DISPLAYED_VR_CHANGES = false;
+        DISPLAYED_TABLETOP_REACH = false;
         SERVER_VR_CHANGES_LIST = null;
         SHOW_NO_TELEPORT_MESSAGE = false;
     }

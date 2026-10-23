@@ -324,9 +324,11 @@ public class ServerConfig {
             .push("allowAttacksWhileBlocking")
             .define(true)
             .setPacketFunction(v -> new AttackWhileBlockingPayloadS2C(ALLOW_ATTACKS_WHILE_BLOCKING.get()));
+        // on in singleplayer and LAN worlds, where the host plays too. dedicated servers have to allow it, since they
+        // can't check that a player really is in tabletop mode
         TABLETOP_ALLOWED = BUILDER
             .push("tabletopAllowed")
-            .define(true)
+            .define(!Xloader.INSTANCE.isDedicatedServer())
             .setPacketFunction(v -> getTabletopPayload());
         TABLETOP_MAX_REACH = BUILDER
             .push("tabletopMaxReach")

@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.vivecraft.api.client.Tracker;
 import org.vivecraft.client.VivecraftVRMod;
+import org.vivecraft.client.network.ClientNetworking;
 import org.vivecraft.client.utils.ClientUtils;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.MethodHolder;
@@ -44,10 +45,14 @@ public class TabletopManager {
     private static final double TELEPORT_DISTANCE = 8.0;
     // grid of surface samples for choosing the base height, per side
     private static final int SURFACE_SAMPLES = 9;
+    // how long after entering the player is told that the server doesn't give the extra reach, in ticks
+    private static final int REACH_NOTICE_DELAY = 100;
 
     private final ClientDataHolderVR dh;
 
     private boolean active;
+    // ticks since entering tabletop mode
+    private int activeTicks;
     private TabletopFrame frame;
     // world position that is shown at the frame center
     private Vec3 focus;
@@ -107,6 +112,21 @@ public class TabletopManager {
         if (this.active) {
             this.applySettings();
             this.update();
+            this.activeTicks++;
+            this.checkServerReach();
+        }
+    }
+
+    /**
+     * tells the player once per server when it doesn't give the extra reach, so the red laser isn't a surprise.
+     * waits a few seconds after entering, so that the server had time to say what it allows
+     */
+    private void checkServerReach() {
+        if (this.activeTicks == REACH_NOTICE_DELAY && !ClientNetworking.SERVER_TABLETOP_ALLOWED &&
+            !ClientNetworking.DISPLAYED_TABLETOP_REACH)
+        {
+            ClientNetworking.DISPLAYED_TABLETOP_REACH = true;
+            ClientUtils.addChatMessage(Component.translatable("vivecraft.messages.tabletop.noReach"));
         }
     }
 
@@ -266,6 +286,7 @@ public class TabletopManager {
         this.lastLevel = MC.level;
 
         this.grab.reset();
+        this.activeTicks = 0;
         this.active = true;
         this.update();
         VRSettings.LOGGER.info("Vivecraft: entered tabletop mode, frame at {}, focus {}", center, this.focus);
