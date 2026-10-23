@@ -5,11 +5,13 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client.gui.framework.screens.TwoHandedScreen;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.MethodHolder;
 import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.provider.control.InputAction;
+import org.vivecraft.client_vr.tabletop.ViewMode;
 
 import java.util.Arrays;
 
@@ -42,6 +44,11 @@ public class GuiRadial extends TwoHandedScreen {
                 .ifPresent(keymapping -> {
                     InputAction vrinputaction = MCVR.get().getInputAction(this.arr[index]);
                     String label = I18n.get(keymapping.getName());
+                    if (keymapping == VivecraftVRMod.INSTANCE.keyToggleTabletop) {
+                        // show what the button will do
+                        label = I18n.get(this.dh.vrSettings.viewMode == ViewMode.TABLETOP ?
+                            "vivecraft.key.toggleTabletop.toVR" : "vivecraft.key.toggleTabletop.toTabletop");
+                    }
                     if (vrinputaction != null &&
                         (vrinputaction.keyBinding.isDown() || MethodHolder.isKeyDown(vrinputaction.keyBinding.key)))
                     {
