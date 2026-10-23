@@ -92,6 +92,7 @@
     "client_vr.renderer.PostChainVRMixin",
     "client_vr.renderer.ScreenEffectRendererVRMixin",
     "client_vr.renderer.SectionOcclusionGraphVRMixin",
+    "client_vr.renderer.ShaderManagerVRMixin",
     "client_vr.renderer.SectionOcclusionGraphAccessor",
     "client_vr.renderer.SubmitNodeCollectionVRMixin",
     "client_vr.renderer.WeatherEffectRendererVRMixin",
