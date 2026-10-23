@@ -177,6 +177,15 @@ public class TabletopPick {
     }
 
     /**
+     * forgets the last pick, when leaving tabletop mode
+     */
+    public static void reset() {
+        LAST_RESULT = Result.NONE;
+        LAST_END = null;
+        LAST_START = null;
+    }
+
+    /**
      * @return what the last pick found
      */
     public static Result getLastResult() {

@@ -45,6 +45,7 @@ public class ClientNetworking {
     public static boolean DISPLAYED_CHAT_WARNING = false;
     public static boolean DISPLAYED_HEAD_AIM_WARNING = false;
     public static boolean DISPLAYED_VR_CHANGES = false;
+    public static boolean DISPLAYED_TABLETOP_REACH = false;
     public static boolean ABLE_TO_DISPLAY_CHAT_WARNINGS = false;
     public static boolean SHOW_NO_TELEPORT_MESSAGE = false;
 
@@ -63,10 +64,9 @@ public class ClientNetworking {
     public static boolean SERVER_ALLOWS_CRAWLING = false;
     public static boolean SERVER_ALLOWS_VR_SWITCHING = false;
     public static boolean SERVER_ALLOWS_DUAL_WIELDING = false;
-    // if the server gives extra reach in tabletop mode, and how much at most
-    public static boolean SERVER_TABLETOP_ALLOWED = false;
-    public static float SERVER_TABLETOP_MAX_REACH = 0.0F;
     public static boolean SERVER_ALLOWS_ATTACKING_WHILE_BLOCKING = false;
+    // if the server gives extra reach in tabletop mode
+    public static boolean SERVER_TABLETOP_ALLOWED = false;
 
     public static Map<String, String> SERVER_VR_CHANGES_LIST;
 
@@ -100,7 +100,6 @@ public class ClientNetworking {
         TABLETOP_SENT = false;
         TABLETOP_REACH_SENT = 0.0F;
         SERVER_TABLETOP_ALLOWED = false;
-        SERVER_TABLETOP_MAX_REACH = 0.0F;
         SERVER_HAS_VIVECRAFT = false;
         SERVER_WANTS_DATA = false;
         SERVER_SUPPORTS_DIRECT_TELEPORT = false;
@@ -134,6 +133,7 @@ public class ClientNetworking {
         DISPLAYED_CHAT_WARNING = false;
         DISPLAYED_HEAD_AIM_WARNING = false;
         DISPLAYED_VR_CHANGES = false;
+        DISPLAYED_TABLETOP_REACH = false;
         SERVER_VR_CHANGES_LIST = null;
         SHOW_NO_TELEPORT_MESSAGE = false;
     }
@@ -181,8 +181,8 @@ public class ClientNetworking {
         {
             return;
         }
-        // in tabletop mode the head and hands are far away from the avatar, so don't send them.
-        // if the server allows it, it treats the player like a regular player, otherwise it keeps the last life size pose
+        // in tabletop mode the head and hands are far away from the avatar, so they aren't sent. if the server allows it,
+        // it treats the player like a regular player, otherwise it keeps the last life size pose
         boolean tabletop = TabletopManager.isActive();
         // the permission for switching arrives after the version handshake, which told the server the player is in VR
         if (SERVER_ALLOWS_VR_SWITCHING && tabletop != TABLETOP_NON_VR_SENT) {
@@ -592,11 +592,7 @@ public class ClientNetworking {
                 VR_SWITCHING_WARNING = false;
             }
             case DUAL_WIELDING -> SERVER_ALLOWS_DUAL_WIELDING = ((DualWieldingPayloadS2C) s2cPayload).allowed();
-            case TABLETOP -> {
-                TabletopPayloadS2C payload = (TabletopPayloadS2C) s2cPayload;
-                SERVER_TABLETOP_ALLOWED = payload.allowed();
-                SERVER_TABLETOP_MAX_REACH = payload.maxReach();
-            }
+            case TABLETOP -> SERVER_TABLETOP_ALLOWED = ((TabletopPayloadS2C) s2cPayload).allowed();
             case SERVER_VR_CHANGES -> SERVER_VR_CHANGES_LIST = ((ServerVrChangesS2CPacket) s2cPayload).changes();
             case HAPTIC -> {
                 if (VRState.VR_RUNNING) {

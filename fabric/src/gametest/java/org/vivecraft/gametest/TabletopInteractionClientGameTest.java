@@ -28,6 +28,7 @@ import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.provider.control.ControllerType;
 import org.vivecraft.client_vr.provider.control.InputAction;
 import org.vivecraft.client_vr.provider.nullvr.NullVR;
+import org.vivecraft.client_vr.provider.control.InputAction;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.client_vr.tabletop.ViewMode;

@@ -13,6 +13,7 @@ import org.vivecraft.client_vr.gameplay.interact_modules.DebugRenderModule;
 import org.vivecraft.client_vr.provider.control.ControllerType;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -12,7 +12,7 @@ gradle_prop() {
 
 # path of a nix package output, built or fetched on first use
 nix_pkg() {
-    nix build --no-link --print-out-paths "nixpkgs#$1" | head -1
+    nix build --no-link --print-out-paths "nixpkgs#$1" | sed -n 1p
 }
 
 java25() {

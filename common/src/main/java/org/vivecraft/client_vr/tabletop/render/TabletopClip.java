@@ -100,6 +100,9 @@ public class TabletopClip {
         renderPass.setUniform(TabletopClipUBO.UBO_NAME, UBO.getBuffer());
     }
 
+    /**
+     * frees the clip box buffer
+     */
     public static void close() {
         if (UBO != null) {
             UBO.close();

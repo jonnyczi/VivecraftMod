@@ -88,8 +88,8 @@ public class MultiPlayerGameModeVRMixin {
             ClientNetworking.overrideAimDir(aim.dir());
             ClientNetworking.overrideAimPos(aim.pos());
         } else {
-            // the server still handles the player as vr player, with the last pose from before tabletop mode.
-            // aim from the avatar to the target, that also works for projectiles
+            // the server still handles the player as vr player, with the last pose from before tabletop mode,
+            // so aim from the avatar to the target, that also works for projectiles
             ClientNetworking.overrideAimDir(TabletopPick.getUseDirection(player));
             ClientNetworking.overrideAimPos(player.getEyePosition());
         }

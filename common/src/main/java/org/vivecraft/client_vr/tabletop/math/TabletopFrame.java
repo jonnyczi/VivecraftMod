@@ -13,12 +13,4 @@ import org.joml.Vector3fc;
  * @param depthBelow  how far below the base the world is shown
  */
 public record TabletopFrame(Vector3fc center, float yaw, float sizeX, float sizeZ, float heightAbove,
-                            float depthBelow)
-{
-    /**
-     * @return distance from the center of the base to a corner of the base
-     */
-    public float halfDiagonal() {
-        return 0.5F * (float) Math.sqrt(this.sizeX * this.sizeX + this.sizeZ * this.sizeZ);
-    }
-}
+                            float depthBelow) {}

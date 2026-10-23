@@ -28,16 +28,6 @@ public class ClipBoxTest {
     }
 
     @Test
-    public void relativeToCameraStaysPreciseFarAway() {
-        ClipBox box = new ClipBox(29_999_000.25, 60, -29_999_000.75, 29_999_050.25, 90, -29_998_950.75);
-        float[] relative = box.relativeTo(new Vec3(29_999_020.0, 100.0, -29_998_980.0));
-        Assertions.assertEquals(-19.75F, relative[0], 1.0E-4F);
-        Assertions.assertEquals(-40.0F, relative[1], 1.0E-4F);
-        Assertions.assertEquals(-20.75F, relative[2], 1.0E-4F);
-        Assertions.assertEquals(30.25F, relative[3], 1.0E-4F);
-    }
-
-    @Test
     public void containsAndIntersects() {
         ClipBox box = new ClipBox(0, 0, 0, 10, 10, 10);
         Assertions.assertTrue(box.contains(5, 5, 5));

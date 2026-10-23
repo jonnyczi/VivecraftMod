@@ -42,7 +42,7 @@ public class VivecraftVRMod {
     public final HandedKeyBinding keyClimbeyJump = new HandedKeyBinding("vivecraft.key.climbeyJump", -1,
         this.categoryClimbey);
     public final HandedKeyBinding keyTabletopGrab = new HandedKeyBinding("vivecraft.key.tabletopGrab", -1,
-        this.categoryClimbey);
+        KeyMapping.Category.MISC);
     public final KeyMapping keyExportWorld = new KeyMapping("vivecraft.key.exportWorld", -1,
         KeyMapping.Category.MISC);
     public final KeyMapping keyFreeMoveRotate = new KeyMapping("vivecraft.key.freeMoveRotate", -1,

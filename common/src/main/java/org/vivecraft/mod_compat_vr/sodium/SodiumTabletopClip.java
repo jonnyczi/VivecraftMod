@@ -8,13 +8,18 @@ import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import org.apache.commons.io.IOUtils;
 import org.lwjgl.system.MemoryStack;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_vr.tabletop.math.ClipBox;
 import org.vivecraft.client_vr.tabletop.render.TabletopClip;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 /**
  * clips sodium's terrain to the tabletop frame. sodium has its own chunk shaders, so those get patched when loaded,
@@ -22,7 +27,8 @@ import java.nio.ByteBuffer;
  */
 public class SodiumTabletopClip {
 
-    private static final String SHADER_PATH = "shaders/blocks/block_layer_opaque";
+    private static final String VERTEX_SHADER = "shaders/blocks/block_layer_opaque.vsh";
+    private static final String FRAGMENT_SHADER = "shaders/blocks/block_layer_opaque.fsh";
 
     // vertex shader anchors
     private static final String VERTEX_OUTPUTS = "out vec2 v_TexCoord;";
@@ -41,26 +47,66 @@ public class SodiumTabletopClip {
         .withUniform(UBO_NAME, UniformType.UNIFORM_BUFFER).build();
 
     private static GpuBuffer BUFFER;
+    // if the chunk shaders have the clip box, decided when they are loaded
+    private static boolean PATCHED = false;
 
     /**
+     * adds the clip box to sodium's chunk shaders. the vertex and fragment shader are only changed together, when both
+     * look as expected, otherwise they wouldn't link anymore and sodium couldn't render any terrain
+     *
      * @param location resource location of the shader file
-     * @return if the given file is a sodium chunk shader
+     * @param source   source of the shader file
+     * @param files    all shader files, to check the other shader of the pair
+     * @return the patched source, or the unchanged source if it isn't a sodium chunk shader or can't be patched
      */
-    public static boolean isChunkShader(Identifier location, String extension) {
-        return location.getNamespace().equals("sodium") && location.getPath().equals(SHADER_PATH + extension);
+    public static String patch(Identifier location, String source, Map<Identifier, Resource> files) {
+        if (!location.getNamespace().equals("sodium")) {
+            return source;
+        }
+        boolean vertex = location.getPath().equals(VERTEX_SHADER);
+        if (!vertex && !location.getPath().equals(FRAGMENT_SHADER)) {
+            return source;
+        }
+        String other = readSource(files.get(location.withPath(vertex ? FRAGMENT_SHADER : VERTEX_SHADER)));
+        String vertexSource = vertex ? source : other;
+        String fragmentSource = vertex ? other : source;
+        PATCHED = vertexSource != null && fragmentSource != null &&
+            vertexSource.contains(VERTEX_OUTPUTS) && vertexSource.contains(VERTEX_POSITION) &&
+            fragmentSource.contains(FRAGMENT_OUTPUT) && fragmentSource.contains(FRAGMENT_MAIN);
+        if (!PATCHED) {
+            if (vertex) {
+                VRSettings.LOGGER.warn("Vivecraft: unknown sodium chunk shaders, tabletop clipping won't work");
+            }
+            return source;
+        }
+        return vertex ? patchVertex(source) : patchFragment(source);
+    }
+
+    /**
+     * @return if sodium's chunk shaders have the clip box, and it needs to be bound
+     */
+    public static boolean isPatched() {
+        return PATCHED;
+    }
+
+    private static String readSource(Resource resource) {
+        if (resource == null) {
+            return null;
+        }
+        try (Reader reader = resource.openAsReader()) {
+            return IOUtils.toString(reader);
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     /**
      * passes the camera relative position from the vertex to the fragment shader
      *
      * @param source vertex shader source
-     * @return patched source, or the unchanged source if it doesn't look like expected
+     * @return patched source
      */
-    public static String patchVertex(String source) {
-        if (!source.contains(VERTEX_OUTPUTS) || !source.contains(VERTEX_POSITION)) {
-            VRSettings.LOGGER.warn("Vivecraft: unknown sodium chunk vertex shader, tabletop clipping won't work");
-            return source;
-        }
+    private static String patchVertex(String source) {
         return source
             .replace(VERTEX_OUTPUTS, VERTEX_OUTPUTS + "\nout vec3 v_VivecraftClipPos;\n")
             .replace(VERTEX_POSITION, VERTEX_POSITION + "\n    v_VivecraftClipPos = position;\n");
@@ -70,13 +116,9 @@ public class SodiumTabletopClip {
      * discards fragments outside the clip box
      *
      * @param source fragment shader source
-     * @return patched source, or the unchanged source if it doesn't look like expected
+     * @return patched source
      */
-    public static String patchFragment(String source) {
-        if (!source.contains(FRAGMENT_OUTPUT) || !source.contains(FRAGMENT_MAIN)) {
-            VRSettings.LOGGER.warn("Vivecraft: unknown sodium chunk fragment shader, tabletop clipping won't work");
-            return source;
-        }
+    private static String patchFragment(String source) {
         return source
             .replace(FRAGMENT_OUTPUT, FRAGMENT_OUTPUT + """
 
@@ -107,6 +149,9 @@ public class SodiumTabletopClip {
      * @param cameraZ camera z position
      */
     public static void upload(double cameraX, double cameraY, double cameraZ) {
+        if (!PATCHED) {
+            return;
+        }
         if (BUFFER == null || BUFFER.isClosed()) {
             BUFFER = RenderSystem.getDevice().createBuffer(() -> "Vivecraft Sodium Tabletop Clip",
                 GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, UBO_SIZE);
@@ -130,9 +175,11 @@ public class SodiumTabletopClip {
     }
 
     /**
-     * binds the clip box to sodium's terrain render pass, the pipeline always expects it
+     * binds the clip box to sodium's terrain render pass, the patched pipelines expect it
      */
     public static void bind(RenderPass pass) {
-        pass.setUniform(UBO_NAME, BUFFER);
+        if (PATCHED && BUFFER != null) {
+            pass.setUniform(UBO_NAME, BUFFER);
+        }
     }
 }

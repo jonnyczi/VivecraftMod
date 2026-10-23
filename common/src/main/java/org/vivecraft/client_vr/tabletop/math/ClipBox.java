@@ -35,12 +35,18 @@ public record ClipBox(double minX, double minY, double minZ, double maxX, double
             this.maxX - amount, this.maxY - amount, this.maxZ - amount);
     }
 
+    /**
+     * @return if the given world position is inside the box, the edges count as inside
+     */
     public boolean contains(double x, double y, double z) {
         return x >= this.minX && x <= this.maxX &&
             y >= this.minY && y <= this.maxY &&
             z >= this.minZ && z <= this.maxZ;
     }
 
+    /**
+     * @return if the given world position is inside the box, the edges count as inside
+     */
     public boolean contains(Vec3 pos) {
         return this.contains(pos.x, pos.y, pos.z);
     }
@@ -52,17 +58,6 @@ public record ClipBox(double minX, double minY, double minZ, double maxX, double
         return minX <= this.maxX && maxX >= this.minX &&
             minY <= this.maxY && maxY >= this.minY &&
             minZ <= this.maxZ && maxZ >= this.minZ;
-    }
-
-    /**
-     * @return the box relative to {@code camera}, as {minX, minY, minZ, maxX, maxY, maxZ} for upload to the gpu.
-     * the subtraction is done in double precision, so that it stays accurate far away from the world origin
-     */
-    public float[] relativeTo(Vec3 camera) {
-        return new float[]{
-            (float) (this.minX - camera.x), (float) (this.minY - camera.y), (float) (this.minZ - camera.z),
-            (float) (this.maxX - camera.x), (float) (this.maxY - camera.y), (float) (this.maxZ - camera.z)
-        };
     }
 
     /**
@@ -98,10 +93,6 @@ public record ClipBox(double minX, double minY, double minZ, double maxX, double
 
     public double sizeX() {
         return this.maxX - this.minX;
-    }
-
-    public double sizeY() {
-        return this.maxY - this.minY;
     }
 
     public double sizeZ() {

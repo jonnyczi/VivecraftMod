@@ -89,6 +89,8 @@ public abstract class ServerPlayerMixin extends PlayerMixin {
         ServerVRPlayers.overridePose((ServerPlayer) (Object) this);
         ServerVivePlayer serverVivePlayer = vivecraft$getVivePlayer();
         if (serverVivePlayer != null) {
+            // the player object changes when respawning, keep it up to date even when the client sends nothing
+            serverVivePlayer.player = (ServerPlayer) (Object) this;
             serverVivePlayer.tick();
         }
     }

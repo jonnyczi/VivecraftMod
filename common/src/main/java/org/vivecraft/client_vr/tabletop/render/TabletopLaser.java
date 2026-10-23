@@ -7,9 +7,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.vivecraft.api.client.data.RenderPass;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.render.rendertypes.VRRenderTypes;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.TabletopPick;
-import org.vivecraft.client_vr.render.rendertypes.VRRenderTypes;
 
 /**
  * draws a laser from the controller to what it points at in tabletop mode, so it is clear which hand selects the block

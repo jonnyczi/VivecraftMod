@@ -7,8 +7,8 @@
     "ModelCuboidMixin",
     "SodiumLeavesBlockMixin",
     "SodiumWorldRendererVRMixin",
-    "caffeinemc.EntityRendererMixin",
     "caffeinemc.DefaultChunkRendererVRMixin",
+    "caffeinemc.EntityRendererMixin",
     "caffeinemc.ShaderChunkRendererVRMixin",
     "caffeinemc.VisibleChunkCollectorVRMixin",
     "jellysquid.EntityRendererMixin"

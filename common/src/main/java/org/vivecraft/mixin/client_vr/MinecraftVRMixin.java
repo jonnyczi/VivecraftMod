@@ -59,7 +59,6 @@ import org.vivecraft.client.VivecraftVRMod;
 import org.vivecraft.client.gui.VivecraftClickEvent;
 import org.vivecraft.client.gui.framework.screens.ChangeableParentScreen;
 import org.vivecraft.client.gui.screens.ErrorScreen;
-import org.vivecraft.client.utils.ExitWatchdog;
 import org.vivecraft.client.gui.screens.ServerVrChangesScreen;
 import org.vivecraft.client.gui.screens.UpdateScreen;
 import org.vivecraft.client.network.ClientNetworking;
@@ -67,8 +66,8 @@ import org.vivecraft.client.utils.ClientUtils;
 import org.vivecraft.client.utils.TextUtils;
 import org.vivecraft.client.utils.UpdateChecker;
 import org.vivecraft.client_vr.ClientDataHolderVR;
-import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.MethodHolder;
+import org.vivecraft.client_vr.VRData;
 import org.vivecraft.client_vr.VRState;
 import org.vivecraft.client_vr.extensions.GameRendererExtension;
 import org.vivecraft.client_vr.extensions.MinecraftExtension;
@@ -84,12 +83,12 @@ import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.render.VRFirstPersonArmSwing;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.render.helpers.ShaderHelper;
-import org.vivecraft.client_vr.tabletop.TabletopManager;
-import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.client_vr.render.helpers.VRPassHelper;
 import org.vivecraft.client_vr.render.helpers.graphics.GraphicsHelper;
 import org.vivecraft.client_vr.settings.VRHotkeys;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.client_xr.render_pass.RenderPassManager;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
 import org.vivecraft.mod_compat_vr.ReplayHelper;
@@ -193,12 +192,6 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             }
             ClientDataHolderVR.getInstance().cachedScreen = null;
         }
-    }
-
-    @Inject(method = "exitWorldAndClose", at = @At("HEAD"))
-    private void vivecraft$startExitWatchdog(CallbackInfo ci) {
-        // the game sometimes doesn't fully exit with VR, this records why
-        ExitWatchdog.start(((Minecraft) (Object) this).gameDirectory.toPath().resolve("logs"));
     }
 
     @Inject(method = "exitWorldAndClose", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;close()V"))

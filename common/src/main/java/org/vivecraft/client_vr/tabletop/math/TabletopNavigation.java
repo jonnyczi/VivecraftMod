@@ -25,31 +25,6 @@ public class TabletopNavigation {
     }
 
     /**
-     * changes the zoom while keeping the world point under {@code roomPivot} where it is
-     *
-     * @param focus         current world focus
-     * @param frameCenter   center of the frame base in the room
-     * @param roomPivot     point in the room to zoom around, usually between the hands
-     * @param oldScale      current blocks per meter
-     * @param newScale      new blocks per meter
-     * @param rotation      current world rotation, see {@link TabletopMapping#rotation()}
-     * @param keepBaseLevel if true only zooms horizontally around the pivot, so the layer at the frame base stays the same
-     * @return new world focus
-     */
-    public static Vec3 zoomAround(
-        Vec3 focus, Vector3fc frameCenter, Vector3fc roomPivot, float oldScale, float newScale, float rotation,
-        boolean keepBaseLevel)
-    {
-        // the pivot shows focus + rotate((pivot - center) * scale), keep that the same for both scales
-        Vector3f offset = roomPivot.sub(frameCenter, new Vector3f());
-        if (keepBaseLevel) {
-            offset.y = 0F;
-        }
-        offset.mul(oldScale - newScale).rotateY(rotation);
-        return focus.add(offset.x, offset.y, offset.z);
-    }
-
-    /**
      * moves the world so that {@code target} stays inside the box, at least {@code margin} blocks away from the edges.
      * this is used to scroll the world when the avatar walks towards the frame edge
      *

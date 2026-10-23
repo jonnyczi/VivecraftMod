@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.vivecraft.client.ClientVRPlayers;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
 import org.vivecraft.data.ViveItemTags;
 
@@ -47,8 +48,8 @@ public abstract class FishingHookRendererVRMixin {
         boolean mainHandFishingRod = player.getMainHandItem().getItem() instanceof FishingRodItem ||
             player.getMainHandItem().is(ViveItemTags.VIVECRAFT_FISHING_RODS);
         ClientVRPlayers.RotInfo info;
-        if (!RenderPassType.isVanilla() && player == Minecraft.getInstance().player) {
-            // own player
+        if (!RenderPassType.isVanilla() && player == Minecraft.getInstance().player && !TabletopManager.isActive()) {
+            // own player, in tabletop mode the avatar holds the rod like a regular player
             int c = mainHandFishingRod ? 0 : 1;
             Vec3 aimSource = RenderHelper.getControllerRenderPos(c);
             Vector3f aimDirection = ClientDataHolderVR.getInstance().vrPlayer.vrdata_world_render.getHand(c)
