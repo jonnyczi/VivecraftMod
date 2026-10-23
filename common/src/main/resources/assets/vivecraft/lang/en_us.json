@@ -28,6 +28,8 @@
   "vivecraft.key.togglePlayerList": "Toggle Player List",
   "vivecraft.key.toggleHandheldCam": "Toggle Camera",
   "vivecraft.key.toggleTabletop": "Toggle Tabletop Mode",
+  "vivecraft.key.toggleTabletop.toVR": "Switch to VR",
+  "vivecraft.key.toggleTabletop.toTabletop": "Switch to Tabletop",
   "vivecraft.key.tabletopGrab": "Tabletop Grab",
   "vivecraft.key.quickHandheldCam": "Quick Camera",
   "vivecraft.key.trackpadTouch": "Trackpad Touch",

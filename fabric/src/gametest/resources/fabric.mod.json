@@ -10,7 +10,8 @@
     "fabric-client-gametest": [
       "org.vivecraft.gametest.PassthroughClientGameTest",
       "org.vivecraft.gametest.TabletopClientGameTest",
-      "org.vivecraft.gametest.TabletopInteractionClientGameTest"
+      "org.vivecraft.gametest.TabletopInteractionClientGameTest",
+      "org.vivecraft.gametest.TabletopPersistenceClientGameTest"
     ]
   },
   "depends": {
