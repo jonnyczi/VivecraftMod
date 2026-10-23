@@ -38,7 +38,7 @@ public class TabletopLaser {
         ClientDataHolderVR dh = ClientDataHolderVR.getInstance();
         if (!TabletopManager.isActive() || MC.player == null || MC.gui.screen() != null ||
             dh.vrPlayer.vrdata_world_render == null || !RenderPass.isFirstPerson(dh.currentPass) ||
-            dh.interactTracker.isActiveModule(dh.hotbarModule))
+            dh.hotbarModule.hotbar >= 0)
         {
             // no laser while the hand selects a hotbar slot
             return;

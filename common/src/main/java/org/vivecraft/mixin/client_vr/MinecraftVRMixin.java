@@ -432,7 +432,7 @@ public abstract class MinecraftVRMixin implements MinecraftExtension {
             }
 
             if (TabletopManager.isActive() && this.player != null && this.getCameraEntity() == this.player) {
-                if (dataHolder.interactTracker.isActiveModule(dataHolder.hotbarModule)) {
+                if (dataHolder.hotbarModule.hotbar >= 0) {
                     // the hand is selecting a hotbar slot, so it doesn't point at the world
                     this.hitResult = TabletopPick.none(this.player.position());
                     this.crosshairPickEntity = null;

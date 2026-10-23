@@ -77,7 +77,7 @@ public class TabletopManager {
         this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab).setEnabled(ControllerType.LEFT, grab);
         // when the right hand touches the hotbar, its grip selects the slot instead
         this.dh.vr.getInputAction(VivecraftVRMod.INSTANCE.keyTabletopGrab).setEnabled(ControllerType.RIGHT,
-            grab && !this.dh.interactTracker.isActiveModule(this.dh.hotbarModule));
+            grab && this.dh.hotbarModule.hotbar < 0);
         if (this.active) {
             this.update();
         }
