@@ -12,7 +12,8 @@
       "org.vivecraft.gametest.TabletopClientGameTest",
       "org.vivecraft.gametest.TabletopInteractionClientGameTest",
       "org.vivecraft.gametest.TabletopPersistenceClientGameTest",
-      "org.vivecraft.gametest.TabletopNavigationClientGameTest"
+      "org.vivecraft.gametest.TabletopNavigationClientGameTest",
+      "org.vivecraft.gametest.TabletopSituationsClientGameTest"
     ]
   },
   "depends": {

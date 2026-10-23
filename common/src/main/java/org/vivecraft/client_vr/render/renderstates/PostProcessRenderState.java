@@ -8,6 +8,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import org.vivecraft.client_vr.ClientDataHolderVR;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.mod_compat_vr.iris.IrisHelper;
 
 public class PostProcessRenderState {
@@ -35,7 +36,8 @@ public class PostProcessRenderState {
         this.pumpkinEffect = 0.0F;
         this.portalEffect = 0.0F;
 
-        if (mc.player != null && mc.level != null) {
+        // in tabletop mode these effects would tint the whole view, the room included, for things happening to the avatar
+        if (mc.player != null && mc.level != null && !TabletopManager.isActive()) {
             if (dataHolder.vrSettings.waterEffect && this.wasInWater != isInWater) {
                 // water state changed, start effect
                 this.waterEffect = 2.3F;
