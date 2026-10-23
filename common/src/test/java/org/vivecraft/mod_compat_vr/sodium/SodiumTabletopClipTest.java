@@ -1,7 +1,13 @@
 package org.vivecraft.mod_compat_vr.sodium;
 
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public class SodiumTabletopClipTest {
 
@@ -25,18 +31,24 @@ public class SodiumTabletopClipTest {
         }
         """;
 
+    private static final Identifier VERTEX_LOCATION = Identifier.fromNamespaceAndPath("sodium",
+        "shaders/blocks/block_layer_opaque.vsh");
+    private static final Identifier FRAGMENT_LOCATION = Identifier.fromNamespaceAndPath("sodium",
+        "shaders/blocks/block_layer_opaque.fsh");
+
     @Test
     public void vertexPassesThePosition() {
-        String patched = SodiumTabletopClip.patchVertex(VERTEX);
+        String patched = SodiumTabletopClip.patch(VERTEX_LOCATION, VERTEX, files(VERTEX, FRAGMENT));
         Assertions.assertTrue(patched.contains("out vec3 v_VivecraftClipPos;"));
         // the position needs to be written after it is calculated
         Assertions.assertTrue(patched.indexOf("v_VivecraftClipPos = position;") >
             patched.indexOf("vec3 position = _vert_position + translation;"));
+        Assertions.assertTrue(SodiumTabletopClip.isPatched());
     }
 
     @Test
     public void fragmentDiscardsOutsideTheBox() {
-        String patched = SodiumTabletopClip.patchFragment(FRAGMENT);
+        String patched = SodiumTabletopClip.patch(FRAGMENT_LOCATION, FRAGMENT, files(VERTEX, FRAGMENT));
         Assertions.assertTrue(patched.contains("uniform " + SodiumTabletopClip.UBO_NAME + " {"));
         Assertions.assertTrue(patched.contains("vec4 u_VivecraftClipMin;"));
         Assertions.assertTrue(patched.contains("vec4 u_VivecraftClipMax;"));
@@ -47,10 +59,26 @@ public class SodiumTabletopClipTest {
     }
 
     @Test
-    public void unknownShadersStayUnchanged() {
+    public void bothStayUnchangedWhenOneIsUnknown() {
+        // the fragment shader would need a vertex output that an unknown vertex shader doesn't have
         String unknown = "#version 330 core\nvoid main() {}\n";
-        Assertions.assertEquals(unknown, SodiumTabletopClip.patchVertex(unknown));
-        Assertions.assertEquals(unknown, SodiumTabletopClip.patchFragment(unknown));
+        Map<Identifier, Resource> files = files(unknown, FRAGMENT);
+        Assertions.assertEquals(unknown, SodiumTabletopClip.patch(VERTEX_LOCATION, unknown, files));
+        Assertions.assertEquals(FRAGMENT, SodiumTabletopClip.patch(FRAGMENT_LOCATION, FRAGMENT, files));
+        Assertions.assertFalse(SodiumTabletopClip.isPatched());
     }
 
+    @Test
+    public void otherShadersStayUnchanged() {
+        Identifier other = Identifier.fromNamespaceAndPath("minecraft", "shaders/core/terrain.vsh");
+        Assertions.assertEquals(VERTEX, SodiumTabletopClip.patch(other, VERTEX, files(VERTEX, FRAGMENT)));
+    }
+
+    private static Map<Identifier, Resource> files(String vertex, String fragment) {
+        return Map.of(VERTEX_LOCATION, resource(vertex), FRAGMENT_LOCATION, resource(fragment));
+    }
+
+    private static Resource resource(String source) {
+        return new Resource(null, () -> new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8)));
+    }
 }
