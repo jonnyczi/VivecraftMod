@@ -45,6 +45,7 @@ import org.vivecraft.client_vr.settings.VRSettings;
 import org.vivecraft.client_vr.utils.external.jinfinadeck;
 import org.vivecraft.client_vr.utils.external.jkatvr;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
+import org.vivecraft.client_vr.tabletop.TabletopPick;
 import org.vivecraft.client_vr.tabletop.math.TabletopMapping;
 import org.vivecraft.common.VRServerPerms;
 import org.vivecraft.common.utils.MathUtils;
@@ -693,6 +694,10 @@ public class VRPlayer {
      * @return the direction the player should look at
      */
     public Vector3fc getRightClickLookOverride(Player entity, int c) {
+        if (TabletopManager.isActive()) {
+            // items are used towards the laser target, not where the avatar looks
+            return TabletopPick.getUseDirection(entity);
+        }
         Vector3fc out = entity.getLookAngle().toVector3f();
 
         if (this.lookAtPos != null || this.crossVec != null) {

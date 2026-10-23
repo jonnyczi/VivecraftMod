@@ -7,9 +7,12 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.BlockHitResult;
@@ -121,6 +124,53 @@ public class TabletopInteractionClientGameTest implements FabricClientGameTest {
                     server.overworld().getBlockState(target).is(Blocks.DIRT)),
                 "the server should have placed dirt at " + target);
             VRScreenshot.takeLeftEye(context, "tabletop_placed");
+
+            // a water bucket pours where the laser points, even when the avatar can't see that spot
+            BlockPos wall = singleplayer.getServer().computeOnServer(server -> {
+                ServerPlayer player = server.getPlayerList().getPlayers().getFirst();
+                Vec3 eye = player.getEyePosition();
+                Vec3 top = Vec3.atCenterOf(target).add(0, 0.5, 0);
+                for (double t = 0.5; t > 0.05; t -= 0.1) {
+                    BlockPos pos = BlockPos.containing(eye.lerp(top, t));
+                    if (pos.getX() != target.getX() || pos.getZ() != target.getZ()) {
+                        server.overworld().setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
+                        return pos;
+                    }
+                }
+                throw new AssertionError("no place for a wall between the avatar and " + target);
+            });
+            check(singleplayer.getServer().computeOnServer(server -> {
+                    ServerPlayer player = server.getPlayerList().getPlayers().getFirst();
+                    BlockHitResult hit = server.overworld().clip(new ClipContext(player.getEyePosition(),
+                        Vec3.atCenterOf(target).add(0, 0.5, 0), ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE,
+                        player));
+                    return !hit.getBlockPos().equals(target) || hit.getDirection() != Direction.UP;
+                }),
+                "the wall at " + wall + " should hide the top of " + target + " from the avatar");
+            singleplayer.getServer().runCommand("item replace entity @a weapon.mainhand with minecraft:water_bucket");
+            context.waitTicks(2);
+            pointAt(context, Vec3.atCenterOf(target).add(0, 0.5, 0));
+            checkHit(context, target, Direction.UP);
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).holdBinding());
+            context.waitTicks(2);
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).stopHoldingBinding(1));
+            context.waitTicks(5);
+            check(singleplayer.getServer().computeOnServer(server ->
+                    server.overworld().getFluidState(target.above()).is(FluidTags.WATER)),
+                "the bucket should pour water on top of " + target + " where the laser points");
+            check(context.computeOnClient(mc -> mc.player.getMainHandItem().is(Items.BUCKET)),
+                "the water bucket should be empty after pouring");
+
+            // and the empty bucket picks the water up again
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).holdBinding());
+            context.waitTicks(2);
+            context.runOnClient(mc -> MCVR.get().getInputAction(mc.options.keyUse).stopHoldingBinding(1));
+            context.waitTicks(5);
+            check(singleplayer.getServer().computeOnServer(server ->
+                    server.overworld().getFluidState(target.above()).isEmpty()),
+                "the empty bucket should pick up the water on top of " + target);
+            singleplayer.getServer().runCommand(
+                "setblock %d %d %d minecraft:air".formatted(wall.getX(), wall.getY(), wall.getZ()));
 
             // drag the world inside the frame with the right grip, the grip doesn't switch hotbar slots
             int slot = context.computeOnClient(mc -> mc.player.getInventory().getSelectedSlot());
