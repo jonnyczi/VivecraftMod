@@ -20,3 +20,6 @@ classes/
 .settings
 *.launch
 .architectury-transformer/
+
+# logs from unit tests that bootstrap minecraft
+common/logs/

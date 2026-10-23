@@ -569,6 +569,8 @@ public class ShaderHelper {
         {
             if (blend) {
                 renderPass.setPipeline(VRShaders.BLIT_VR_BLEND_PIPELINE);
+            } else if (DATA_HOLDER.vrSettings.renderAlphaCheckerboard) {
+                renderPass.setPipeline(VRShaders.BLIT_VR_ALPHA_DEBUG_PIPELINE);
             } else {
                 renderPass.setPipeline(VRShaders.BLIT_VR_PIPELINE);
             }

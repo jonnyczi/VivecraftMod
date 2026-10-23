@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "vivecraft-gametest",
+  "version": "1.0.0",
+  "name": "Vivecraft Gametests",
+  "description": "Automated client tests for Vivecraft, run with ./gradlew :fabric:runClientGameTest",
+  "license": "LGPLv3",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "org.vivecraft.gametest.PassthroughClientGameTest"
+    ]
+  },
+  "depends": {
+    "vivecraft": "*"
+  }
+}

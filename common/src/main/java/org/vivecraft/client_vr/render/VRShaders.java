@@ -111,6 +111,18 @@ public class VRShaders {
             new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_COLOR))
         .build();
 
+    // shows the alpha of the source as a checkerboard
+    public static final RenderPipeline BLIT_VR_ALPHA_DEBUG_PIPELINE = RenderPipeline.builder()
+        .withLocation(Identifier.fromNamespaceAndPath("vivecraft", "pipeline/vivecraft_blit_alpha_debug"))
+        .withVertexShader(Identifier.fromNamespaceAndPath("vivecraft", "core/passthrough_vr"))
+        .withFragmentShader(Identifier.fromNamespaceAndPath("vivecraft", "core/blit_alpha_debug_vr"))
+        .withBindGroupLayout(BLIT_VR_BIND_GROUP)
+        .withVertexBinding(0, DefaultVertexFormat.POSITION_TEX)
+        .withPrimitiveTopology(PrimitiveTopology.QUADS)
+        .withColorTargetState(
+            new ColorTargetState(Optional.empty(), GpuFormat.RGBA8_UNORM, ColorTargetState.WRITE_COLOR))
+        .build();
+
     public static final RenderPipeline BLIT_VR_BLEND_PIPELINE = RenderPipeline.builder()
         .withLocation(Identifier.fromNamespaceAndPath("vivecraft", "pipeline/vivecraft_blit"))
         .withVertexShader(Identifier.fromNamespaceAndPath("vivecraft", "core/passthrough_vr"))

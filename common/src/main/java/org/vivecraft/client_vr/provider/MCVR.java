@@ -1522,6 +1522,27 @@ public abstract class MCVR {
     }
 
     /**
+     * @return if the VR runtime can show the real world (camera passthrough) behind transparent parts of the frame
+     */
+    public boolean supportsPassthrough() {
+        return false;
+    }
+
+    /**
+     * @return if passthrough is currently active, frames should then be rendered with a transparent background
+     */
+    public boolean isPassthroughActive() {
+        return false;
+    }
+
+    /**
+     * enables or disables camera passthrough, does nothing if {@link #supportsPassthrough()} is false
+     *
+     * @param active if passthrough should be shown behind transparent parts of the frame
+     */
+    public void setPassthroughActive(boolean active) {}
+
+    /**
      * @return the ipd in meters
      */
     public abstract float getIPD();

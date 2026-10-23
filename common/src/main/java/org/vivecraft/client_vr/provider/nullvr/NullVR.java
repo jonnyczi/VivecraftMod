@@ -31,6 +31,9 @@ public class NullVR extends MCVR {
 
     private boolean vrActive = true;
 
+    // there is no real passthrough, but this allows testing the transparent background on the desktop mirror
+    private boolean passthroughActive = false;
+
     protected static final int HEAD_TRACKER = CAMERA_TRACKER;
 
     protected boolean polled;
@@ -285,6 +288,21 @@ public class NullVR extends MCVR {
     @Override
     public float getIPD() {
         return this.dh.vrSettings.nullvrIPD;
+    }
+
+    @Override
+    public boolean supportsPassthrough() {
+        return true;
+    }
+
+    @Override
+    public boolean isPassthroughActive() {
+        return this.passthroughActive;
+    }
+
+    @Override
+    public void setPassthroughActive(boolean active) {
+        this.passthroughActive = active;
     }
 
     @Override

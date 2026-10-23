@@ -543,6 +543,10 @@ public class VRSettings {
     public String gameplayTrackerToRender = "";
     @SettingField(VrOptions.RENDER_DEBUG_ALL_PASSES)
     public boolean renderAllPasses = false;
+    @SettingField(VrOptions.RENDER_DEBUG_TRANSPARENT_BACKGROUND)
+    public boolean renderTransparentBackground = false;
+    @SettingField(VrOptions.RENDER_DEBUG_ALPHA_CHECKERBOARD)
+    public boolean renderAlphaCheckerboard = false;
 
     // other debug settings
     @SettingField(VrOptions.CONTROLLER_TRANSFORM)
@@ -2536,6 +2540,8 @@ public class VRSettings {
                 }
             }
         },
+        RENDER_DEBUG_TRANSPARENT_BACKGROUND(OptionType.BOOLEAN), // renders the world without a sky and shows passthrough if supported
+        RENDER_DEBUG_ALPHA_CHECKERBOARD(OptionType.BOOLEAN), // shows transparent parts of the eye images as a checkerboard on the mirror
         RENDER_DEBUG_HEAD_HITBOX(OptionType.BOOLEAN), // renders entities head hit boxes
         RENDER_DEBUG_DEVICE_AXES(OptionType.BOOLEAN), // renders axes for the local devices
         RENDER_DEBUG_PLAYER_AXES(OptionType.BOOLEAN), // renders axes for all client vr players
