@@ -20,8 +20,8 @@ import org.joml.Vector3fc;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_vr.tabletop.math.ClipBox;
-import org.vivecraft.client_vr.tabletop.math.CutFacePlanner;
 import org.vivecraft.client_vr.tabletop.math.CutFacePlanner.Side;
+import org.vivecraft.client_vr.tabletop.math.CutFacePlanner;
 
 import java.util.ArrayList;
 import java.util.List;

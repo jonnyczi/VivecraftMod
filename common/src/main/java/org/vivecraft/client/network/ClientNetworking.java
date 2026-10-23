@@ -64,9 +64,9 @@ public class ClientNetworking {
     public static boolean SERVER_ALLOWS_CRAWLING = false;
     public static boolean SERVER_ALLOWS_VR_SWITCHING = false;
     public static boolean SERVER_ALLOWS_DUAL_WIELDING = false;
-    // if the server gives extra reach in tabletop mode, and how much at most
-    public static boolean SERVER_TABLETOP_ALLOWED = false;
     public static boolean SERVER_ALLOWS_ATTACKING_WHILE_BLOCKING = false;
+    // if the server gives extra reach in tabletop mode
+    public static boolean SERVER_TABLETOP_ALLOWED = false;
 
     public static Map<String, String> SERVER_VR_CHANGES_LIST;
 
@@ -181,8 +181,8 @@ public class ClientNetworking {
         {
             return;
         }
-        // in tabletop mode the head and hands are far away from the avatar, so don't send them.
-        // if the server allows it, it treats the player like a regular player, otherwise it keeps the last life size pose
+        // in tabletop mode the head and hands are far away from the avatar, so they aren't sent. if the server allows it,
+        // it treats the player like a regular player, otherwise it keeps the last life size pose
         boolean tabletop = TabletopManager.isActive();
         // the permission for switching arrives after the version handshake, which told the server the player is in VR
         if (SERVER_ALLOWS_VR_SWITCHING && tabletop != TABLETOP_NON_VR_SENT) {

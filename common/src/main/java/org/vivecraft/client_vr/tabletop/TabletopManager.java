@@ -357,6 +357,9 @@ public class TabletopManager {
         return this.clipBox;
     }
 
+    /**
+     * @return where the tabletop is in the room
+     */
     public TabletopFrame getFrame() {
         return this.frame;
     }
@@ -389,6 +392,9 @@ public class TabletopManager {
         }
     }
 
+    /**
+     * @return the world position shown at the center of the tabletop base
+     */
     public Vec3 getFocus() {
         return this.focus;
     }

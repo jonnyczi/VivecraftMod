@@ -26,6 +26,11 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class ServerVivePlayer {
+    // extra reach in tabletop mode, where the player reaches into a small copy of the world in front of them
+    private static final Identifier TABLETOP_REACH_ID = Identifier.fromNamespaceAndPath("vivecraft", "tabletop_reach");
+    private static final List<Holder<Attribute>> TABLETOP_REACH_ATTRIBUTES = List.of(
+        Attributes.BLOCK_INTERACTION_RANGE, Attributes.ENTITY_INTERACTION_RANGE);
+
     // player movement state
     @Nullable
     private VrPlayerState vrPlayerState;
@@ -50,11 +55,7 @@ public class ServerVivePlayer {
     public boolean crawling;
     // if the player has VR active
     private boolean isVR = false;
-
-    // tabletop mode, where the player reaches into a small copy of the world in front of them
-    private static final Identifier TABLETOP_REACH_ID = Identifier.fromNamespaceAndPath("vivecraft", "tabletop_reach");
-    private static final List<Holder<Attribute>> TABLETOP_REACH_ATTRIBUTES = List.of(
-        Attributes.BLOCK_INTERACTION_RANGE, Attributes.ENTITY_INTERACTION_RANGE);
+    // if the player is in tabletop mode, and how much extra reach they would like
     private boolean tabletop = false;
     private float tabletopReach = 0.0F;
 

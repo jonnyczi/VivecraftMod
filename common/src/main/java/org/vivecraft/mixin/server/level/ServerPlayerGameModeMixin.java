@@ -1,8 +1,8 @@
 package org.vivecraft.mixin.server.level;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,8 +18,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.vivecraft.api.data.VRBodyPart;
 import org.vivecraft.server.ServerVRPlayers;
-import org.vivecraft.server.TabletopDrops;
 import org.vivecraft.server.ServerVivePlayer;
+import org.vivecraft.server.TabletopDrops;
 import org.vivecraft.server.config.ServerConfig;
 
 import java.util.function.Supplier;

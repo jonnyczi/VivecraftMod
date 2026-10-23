@@ -35,12 +35,18 @@ public record ClipBox(double minX, double minY, double minZ, double maxX, double
             this.maxX - amount, this.maxY - amount, this.maxZ - amount);
     }
 
+    /**
+     * @return if the given world position is inside the box, the edges count as inside
+     */
     public boolean contains(double x, double y, double z) {
         return x >= this.minX && x <= this.maxX &&
             y >= this.minY && y <= this.maxY &&
             z >= this.minZ && z <= this.maxZ;
     }
 
+    /**
+     * @return if the given world position is inside the box, the edges count as inside
+     */
     public boolean contains(Vec3 pos) {
         return this.contains(pos.x, pos.y, pos.z);
     }

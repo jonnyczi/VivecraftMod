@@ -28,11 +28,11 @@ import org.vivecraft.client_vr.provider.MCVR;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.settings.AutoCalibration;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
 import org.vivecraft.common.api_impl.VRAPIImpl;
 import org.vivecraft.common.api_impl.data.VRBodyPartDataImpl;
 import org.vivecraft.common.api_impl.data.VRPoseImpl;
-import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.common.network.VrPlayerState;
 import org.vivecraft.common.utils.MathUtils;
 
