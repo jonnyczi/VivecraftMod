@@ -217,9 +217,20 @@ public class TabletopInteractionClientGameTest implements FabricClientGameTest {
                 "while touching the hotbar the hand shouldn't point at the world");
             placeController(context, MCVR.RIGHT_CONTROLLER, new Vector3f(0.3F, 1.25F, -0.5F));
 
+            // leaving tabletop mode keeps the avatar where it is, also when the head isn't in the middle of the room.
+            // NullVR keeps the headset pose in the camera tracker slot
+            context.runOnClient(mc -> NullVR.get().setDevicePose(MCVR.CAMERA_TRACKER,
+                new Vector3f(0.5F, 1.62F, 0.3F), new Quaternionf()));
+            context.waitTicks(2);
+            Vec3 avatarInTabletop = context.computeOnClient(mc -> mc.player.position());
             context.runOnClient(mc -> ClientDataHolderVR.getInstance().vrSettings.viewMode = ViewMode.VR);
             context.waitFor(mc -> !TabletopManager.isActive(), 100);
-            context.waitTicks(5);
+            context.waitTicks(20);
+            Vec3 avatarInVR = context.computeOnClient(mc -> mc.player.position());
+            check(Math.hypot(avatarInVR.x - avatarInTabletop.x, avatarInVR.z - avatarInTabletop.z) < 0.5,
+                "leaving tabletop mode shouldn't move the avatar, from " + avatarInTabletop + " to " + avatarInVR);
+            context.runOnClient(mc -> NullVR.get().setDevicePose(MCVR.CAMERA_TRACKER,
+                new Vector3f(0.0F, 1.62F, 0.0F), new Quaternionf()));
             double reachAfter = singleplayer.getServer().computeOnServer(server ->
                 server.getPlayerList().getPlayers().getFirst().getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE));
             check(reachAfter < 6.0, "the extra reach should be removed after tabletop mode, got " + reachAfter);
