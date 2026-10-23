@@ -3,6 +3,7 @@ package org.vivecraft.client_vr.render.helpers;
 import org.vivecraft.api.client.data.RenderPass;
 import org.vivecraft.client_vr.ClientDataHolderVR;
 import org.vivecraft.client_vr.VRState;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 
 /**
  * decides if the world should be rendered with a transparent background,
@@ -16,9 +17,12 @@ public class PassthroughHelper {
 
     /**
      * syncs the passthrough state of the VR runtime, needs to be called once per frame before rendering.
+     * tabletop mode shows the real room around the table if the runtime supports it, otherwise the world's sky
      */
     public static void updateFrame() {
-        boolean wanted = DATA_HOLDER.vrSettings.renderTransparentBackground;
+        boolean tabletop = TabletopManager.isActive() && DATA_HOLDER.vrSettings.tabletopPassthrough &&
+            DATA_HOLDER.vr.supportsPassthrough();
+        boolean wanted = DATA_HOLDER.vrSettings.renderTransparentBackground || tabletop;
         if (DATA_HOLDER.vr.isPassthroughActive() != wanted) {
             DATA_HOLDER.vr.setPassthroughActive(wanted);
         }

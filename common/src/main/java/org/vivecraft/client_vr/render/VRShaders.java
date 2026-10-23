@@ -23,6 +23,7 @@ import org.vivecraft.client_vr.render.helpers.ShaderHelper;
 import org.vivecraft.client_vr.render.ubos.LanczosUBO;
 import org.vivecraft.client_vr.render.ubos.MixedRealityUBO;
 import org.vivecraft.client_vr.render.ubos.PostProcessUBO;
+import org.vivecraft.client_vr.tabletop.render.TabletopClip;
 
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -339,6 +340,7 @@ public class VRShaders {
             LANCZOS_UBO.close();
             LANCZOS_UBO = null;
         }
+        TabletopClip.close();
         if (GUI_SAMPLER != null) {
             GUI_SAMPLER.close();
             GUI_SAMPLER = null;

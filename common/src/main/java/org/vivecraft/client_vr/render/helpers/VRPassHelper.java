@@ -17,6 +17,7 @@ import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.render.VRShaders;
 import org.vivecraft.client_vr.render.helpers.graphics.GraphicsHelper;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.render.TabletopClip;
 import org.vivecraft.client_xr.render_pass.RenderPassManager;
 import org.vivecraft.client_xr.render_pass.WorldRenderPass;
 import org.vivecraft.common.utils.MathUtils;
@@ -186,6 +187,7 @@ public class VRPassHelper {
         ((GameRendererExtension) MC.gameRenderer).vivecraft$setShouldDrawScreen(false);
 
         PassthroughHelper.updateFrame();
+        TabletopClip.updateFrame();
 
         // render the different vr passes
         List<RenderPass> list = DATA_HOLDER.vrRenderer.getRenderPasses(false);
@@ -253,6 +255,7 @@ public class VRPassHelper {
 
         try {
             DATA_HOLDER.vrRenderer.endFrame();
+            TabletopClip.endFrame();
         } catch (RenderConfigException exception) {
             VRSettings.LOGGER.error("Vivecraft: error ending frame: {}", exception.error.getString());
         }

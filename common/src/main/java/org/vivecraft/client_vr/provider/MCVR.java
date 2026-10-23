@@ -37,6 +37,7 @@ import org.vivecraft.client_vr.render.RenderConfigException;
 import org.vivecraft.client_vr.settings.AutoCalibration;
 import org.vivecraft.client_vr.settings.VRHotkeys;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.ViewMode;
 import org.vivecraft.client_vr.utils.osc_trackers.OSCTracker;
 import org.vivecraft.client_vr.utils.osc_trackers.OSCTrackerReceiver;
 import org.vivecraft.common.utils.MathUtils;
@@ -1006,6 +1007,13 @@ public abstract class MCVR {
         if (MOD.keyTogglePlayerList.consumeClick()) {
             ((HudExtension) this.mc.gui.hud).vivecraft$setShowPlayerList(
                 !((HudExtension) this.mc.gui.hud).vivecraft$getShowPlayerList());
+        }
+
+        // switch between life size VR and the tabletop diorama
+        if (MOD.keyToggleTabletop.consumeClick()) {
+            this.dh.vrSettings.viewMode =
+                this.dh.vrSettings.viewMode == ViewMode.TABLETOP ? ViewMode.VR : ViewMode.TABLETOP;
+            this.dh.vrSettings.saveOptions();
         }
 
         // screenshot cam

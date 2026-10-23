@@ -23,6 +23,7 @@ import org.vivecraft.client_vr.VRState;
 import org.vivecraft.client_vr.gameplay.VRPlayer;
 import org.vivecraft.client_vr.settings.AutoCalibration;
 import org.vivecraft.client_vr.settings.VRSettings;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.common.CommonDataHolder;
 import org.vivecraft.common.VRServerPerms;
 import org.vivecraft.common.network.CommonNetworkHelper;
@@ -69,6 +70,8 @@ public class ClientNetworking {
     public static NetworkVersion USED_NETWORK_VERSION = NetworkVersion.LEGACY;
     private static float WORLDSCALE_LAST = 0.0F;
     private static float HEIGHT_LAST = 0.0F;
+    // if the player was in tabletop mode last tick
+    private static boolean TABLETOP_LAST = false;
 
     // these overrides are for vanilla servers
     public static Vector3fc AIM_DIR_OVERRIDE = null;
@@ -86,6 +89,7 @@ public class ClientNetworking {
     public static void resetServerSettings() {
         WORLDSCALE_LAST = 0.0F;
         HEIGHT_LAST = 0.0F;
+        TABLETOP_LAST = false;
         SERVER_HAS_VIVECRAFT = false;
         SERVER_WANTS_DATA = false;
         SERVER_SUPPORTS_DIRECT_TELEPORT = false;
@@ -141,6 +145,18 @@ public class ClientNetworking {
         if (Minecraft.getInstance().getConnection() == null ||
             Minecraft.getInstance().getCameraEntity() != Minecraft.getInstance().player)
         {
+            return;
+        }
+        // in tabletop mode the head and hands are far away from the avatar, so don't send them.
+        // if the server allows it, it treats the player like a regular player, otherwise it keeps the last life size pose
+        boolean tabletop = TabletopManager.isActive();
+        if (tabletop != TABLETOP_LAST) {
+            TABLETOP_LAST = tabletop;
+            if (SERVER_ALLOWS_VR_SWITCHING) {
+                sendServerPacket(new VRActivePayloadC2S(!tabletop));
+            }
+        }
+        if (tabletop) {
             return;
         }
         if (ReplayHelper.isLoaded()) {

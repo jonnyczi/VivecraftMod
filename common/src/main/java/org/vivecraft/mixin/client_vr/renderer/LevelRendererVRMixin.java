@@ -43,6 +43,7 @@ import org.vivecraft.client_vr.render.helpers.PassthroughHelper;
 import org.vivecraft.client_vr.render.helpers.RenderHelper;
 import org.vivecraft.client_vr.render.helpers.VREffectsHelper;
 import org.vivecraft.client_vr.render.renderstates.VRRenderState;
+import org.vivecraft.client_vr.tabletop.render.TabletopCutFaces;
 import org.vivecraft.client_xr.render_pass.RenderPassType;
 import org.vivecraft.common.utils.MathUtils;
 
@@ -187,6 +188,14 @@ public abstract class LevelRendererVRMixin implements ResourceManagerReloadListe
             }
             // no depth copy for unoccluded
         }
+    }
+
+    @Inject(method = "submitFeatures*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))
+    private void vivecraft$submitTabletopCutFaces(
+        CallbackInfo ci, @Local(argsOnly = true) LevelRenderState levelRenderState, @Local PoseStack poseStack)
+    {
+        if (RenderPassType.isVanilla()) return;
+        TabletopCutFaces.submit(this.submitNodeStorage, poseStack, levelRenderState.cameraRenderState.pos);
     }
 
     @Inject(method = "submitFeatures*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;finalizeGizmoCollection()V"))

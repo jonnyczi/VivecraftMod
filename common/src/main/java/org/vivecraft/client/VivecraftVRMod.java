@@ -120,6 +120,8 @@ public class VivecraftVRMod {
         KeyMapping.Category.MISC);
     public final KeyMapping keyToggleMovement = new KeyMapping("vivecraft.key.toggleMovement", -1,
         KeyMapping.Category.MOVEMENT);
+    public final KeyMapping keyToggleTabletop = new KeyMapping("vivecraft.key.toggleTabletop", -1,
+        KeyMapping.Category.MISC);
     public final KeyMapping keyToggleWalkUpBlocks = new KeyMapping("vivecraft.key.toggleWalkUp", -1,
         KeyMapping.Category.MOVEMENT);
     public final KeyMapping keyTogglePlayerList = new KeyMapping("vivecraft.key.togglePlayerList", -1,
@@ -152,6 +154,7 @@ public class VivecraftVRMod {
             this.userKeyBindingSet.add(this.keyMoveThirdPersonCam);
             this.userKeyBindingSet.add(this.keyTogglePlayerList);
             this.userKeyBindingSet.add(this.keyToggleHandheldCam);
+            this.userKeyBindingSet.add(this.keyToggleTabletop);
             this.userKeyBindingSet.add(this.keyQuickHandheldCam);
             this.userKeyBindingSet.add(this.keyToggleKeyboard);
             this.userKeyBindingSet.add(this.keyQuickCommand1);

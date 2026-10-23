@@ -32,6 +32,7 @@ import org.vivecraft.client_xr.render_pass.RenderPassType;
 import org.vivecraft.common.api_impl.VRAPIImpl;
 import org.vivecraft.common.api_impl.data.VRBodyPartDataImpl;
 import org.vivecraft.common.api_impl.data.VRPoseImpl;
+import org.vivecraft.client_vr.tabletop.TabletopManager;
 import org.vivecraft.common.network.VrPlayerState;
 import org.vivecraft.common.utils.MathUtils;
 
@@ -94,8 +95,19 @@ public class ClientVRPlayers {
      * @return true if data is available
      */
     public boolean isVRPlayer(UUID uuid) {
+        if (this.isTabletopMainPlayer(uuid)) {
+            // the avatar in tabletop mode is rendered like a regular player
+            return false;
+        }
         return this.vivePlayers.containsKey(uuid) ||
             (VRState.VR_RUNNING && this.mc.player != null && uuid.equals(this.mc.player.getUUID()));
+    }
+
+    /**
+     * @return if the given UUID is the local player and tabletop mode is active
+     */
+    private boolean isTabletopMainPlayer(UUID uuid) {
+        return TabletopManager.isActive() && this.mc.player != null && uuid.equals(this.mc.player.getUUID());
     }
 
     /**
@@ -334,6 +346,9 @@ public class ClientVRPlayers {
      * @return interpolated data
      */
     public RotInfo getRotationsForPlayer(UUID uuid) {
+        if (this.isTabletopMainPlayer(uuid)) {
+            return null;
+        }
         float partialTick = ClientUtils.getCurrentPartialTick();
 
         if (VRState.VR_RUNNING && this.mc.player != null && uuid.equals(this.mc.player.getUUID()) &&

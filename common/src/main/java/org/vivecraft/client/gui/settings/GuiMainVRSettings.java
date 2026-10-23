@@ -30,6 +30,7 @@ public class GuiMainVRSettings extends GuiVROptionsBase {
             }
         }, VROptionLayout.Position.POS_LEFT, 0.0F, true, null),
         new VROptionLayout(VRSettings.VrOptions.VR_HOTSWITCH, VROptionLayout.Position.POS_RIGHT, 0.0F, true, null),
+        new VROptionLayout(VRSettings.VrOptions.VIEW_MODE, VROptionLayout.Position.POS_LEFT, 7.0F, true, null),
         new VROptionLayout(GuiPlayerModelSettings.class, VROptionLayout.Position.POS_RIGHT, 7.0F, true,
             "vivecraft.options.screen.playermodel.button")
     };
