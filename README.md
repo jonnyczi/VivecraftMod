@@ -3,7 +3,7 @@
 > table in your real room, seen through the headset's passthrough, like the Minecraft HoloLens demo. It is made for the
 > **Valve Steam Frame** and is not made or supported by the Vivecraft team.
 >
-> **Steam Frame:** download `Install Minecraft Tabletop.desktop` from the
+> **Steam Frame:** download `Install-Minecraft-Tabletop.desktop` from the
 > [latest release](https://github.com/jonnyczi/VivecraftMod/releases/latest) in desktop mode and double click it, the
 > release page explains the details. The release also has the jar and a Modrinth modpack for installing it yourself.
 > The code is on the [`tabletop`](https://github.com/jonnyczi/VivecraftMod/tree/tabletop) branch, the headset builds

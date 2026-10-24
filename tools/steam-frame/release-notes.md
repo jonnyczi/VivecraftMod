@@ -8,7 +8,7 @@ supported by the Vivecraft team, Valve, Mojang or Microsoft. You need to own Min
 ## Install on the Steam Frame
 
 1. On the Steam Frame, switch to **Desktop Mode**.
-2. Download **`Install Minecraft Tabletop.desktop`** from the assets below, with Firefox or Chromium.
+2. Download **`Install-Minecraft-Tabletop.desktop`** from the assets below, with Firefox or Chromium.
 3. Open your Downloads folder in Dolphin and double click the file. Choose **Execute** or **Continue** if asked.
 4. A terminal shows the progress. Prism Launcher opens once: sign in with the Microsoft account that owns Minecraft,
    then close Prism Launcher.
