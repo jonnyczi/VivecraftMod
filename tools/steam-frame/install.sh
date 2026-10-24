@@ -145,12 +145,15 @@ install_mod "vivecraft-*.jar" "$DIR/downloads/$VIVECRAFT_JAR"
 
 # settings for the Steam Frame, only on the first install, so changes in the game are kept
 if [ ! -f "$GAME/config/vivecraft-client-config.json" ]; then
-    # OpenXR, which has passthrough, and 80% resolution, which the Frame can render at full frame rate
+    # OpenXR, which has passthrough, 80% resolution, which the Frame can render at full frame rate, and the tabletop
+    # toggle in the radial menu, which gets two more buttons for it, so the default items stay
     cat >"$GAME/config/vivecraft-client-config.json" <<'EOF'
 {
   "stereoProviderPluginID": "OPENXR",
   "vrEnabled": "true",
-  "renderScaleFactor": "0.8"
+  "renderScaleFactor": "0.8",
+  "vrRadialButtons": "10",
+  "RADIAL_8": "vivecraft.key.toggleTabletop"
 }
 EOF
 fi
