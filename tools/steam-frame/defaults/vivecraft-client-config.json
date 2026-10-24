@@ -1,0 +1,7 @@
+{
+  "stereoProviderPluginID": "OPENXR",
+  "vrEnabled": "true",
+  "renderScaleFactor": "0.8",
+  "vrRadialButtons": "10",
+  "RADIAL_8": "vivecraft.key.toggleTabletop"
+}

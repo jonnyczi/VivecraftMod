@@ -18,7 +18,7 @@ up in `build/libs/vivecraft-<version>-fabric.jar`.
   the real account on the headset), `eula.txt` and a Vivecraft server config with `debug` and the join messages on.
   It is safe to run again, `run-dev-server.sh` runs it when the server is missing.
 - `server/run-dev-server.sh [jar]` copies the newest built jar (or the given one) into `mods/` and starts the server
-  in this terminal. It prints the address for the headset, `jonnylaptop.lan` (or the LAN IP). Type `op <name>` in the
+  in this terminal. It prints the address for the headset, `<hostname>.lan` (or the LAN IP). Type `op <name>` in the
   console for operator rights, `stop` to stop it.
 - `server/run-dev-server.sh --background [jar]` starts it detached and waits until it's up, the console goes to
   `run/dev-server/console.log`. `server/dev-server-cmd.sh <command>` runs a console command, e.g. `op Steve`, and
@@ -33,6 +33,26 @@ up in `build/libs/vivecraft-<version>-fabric.jar`.
 The laptop's firewall is off (`networking.firewall.enable = false` in the NixOS config). If it ever gets enabled, add
 25565 to `networking.firewall.allowedTCPPorts`, or open it until the firewall restarts with
 `sudo nixos-firewall-tool open tcp 25565`.
+
+## Steam Frame release (`steam-frame/`)
+
+An installer for other Steam Frame owners, published as a GitHub release of the fork, so they don't need this
+repository. It is run in desktop mode on the Frame and installs everything into `~/.local/share/minecraft-tabletop`,
+with its own Prism Launcher: Fabric, Fabric API and Sodium from their official sources, the headset jar from the
+release, the Frame settings and a Steam shortcut. Prism opens once for the Microsoft login.
+
+- Release versions follow upstream's with a suffix, like `26.2-1.3.15-tabletop1`. For a new release, commit
+  `mod_version=<upstream version>-tabletop<n>` on the `tabletop-openxr` branch (only there, so `tabletop` keeps
+  upstream's version for the pull requests).
+- `steam-frame/make-release.sh` builds the release files in `build/steam-frame-release`: the jar from the committed
+  `tabletop-openxr` branch, `install-steam-frame.sh` with all versions and checksums filled in, the
+  `Install Minecraft Tabletop.desktop` file that players double click, a Modrinth modpack with the same mods and
+  settings, the icon, `SHA256SUMS` and the release notes from `steam-frame/release-notes.md`.
+- `steam-frame/defaults/` has the Steam Frame settings that the installer and the modpack start with.
+- `steam-frame/install.sh` is the installer template. For testing it reads `INSTALL_DIR`, `SHORTCUT_NAME`, `ASSET_DIR`
+  (local release files instead of the release page), `NO_SHORTCUT=1` and `NO_LOGIN=1`.
+- Publish with `gh release create <version> --target <tabletop-openxr commit> --notes-file release-notes.md` and the
+  other files, as a full release, so the `releases/latest` links of the installer work.
 
 ## Headset builds (`openxr/`)
 

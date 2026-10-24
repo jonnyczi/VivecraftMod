@@ -1,3 +1,15 @@
+> [!NOTE]
+> **This is an unofficial fork** that adds a **tabletop mode** to Vivecraft: the world sits as a small diorama on a
+> table in your real room, seen through the headset's passthrough, like the Minecraft HoloLens demo. It is made for the
+> **Valve Steam Frame** and is not made or supported by the Vivecraft team.
+>
+> **Steam Frame:** download `Install Minecraft Tabletop.desktop` from the
+> [latest release](https://github.com/jonnyczi/VivecraftMod/releases/latest) in desktop mode and double click it, the
+> release page explains the details. The release also has the jar and a Modrinth modpack for installing it yourself.
+> The code is on the [`tabletop`](https://github.com/jonnyczi/VivecraftMod/tree/tabletop) branch, the headset builds
+> come from [`tabletop-openxr`](https://github.com/jonnyczi/VivecraftMod/tree/tabletop-openxr), which adds the
+> unmerged OpenXR provider.
+
 # Vivecraft Mod (of Vivecraft fabric)
 A port of [Vivecraft](https://www.vivecraft.org) to Fabric/Quilt and back to Forge/Neoforge.\
 This is an official continuation of the project, using mixin's instead of patches.\
