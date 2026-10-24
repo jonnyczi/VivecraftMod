@@ -65,7 +65,6 @@ To uninstall, delete `~/.local/share/minecraft-tabletop` and remove "Minecraft T
 
 ## Known issues
 
-- On the Steam Frame controllers, A and clicking the left stick both jump and place blocks.
 - Shader packs don't work in tabletop mode.
 
 `SHA256SUMS` has the checksums of all files. Source: the
