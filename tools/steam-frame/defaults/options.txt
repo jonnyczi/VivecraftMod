@@ -1,0 +1,3 @@
+preferredGraphicsBackend:"vulkan"
+renderDistance:8
+onboardAccessibility:false

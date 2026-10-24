@@ -5,7 +5,7 @@ with a laser from your hands, in survival and creative.
 This is an unofficial, experimental build of [Vivecraft](https://github.com/Vivecraft/VivecraftMod), not made or
 supported by the Vivecraft team, Valve, Mojang or Microsoft. You need to own Minecraft: Java Edition.
 
-## Install
+## Install on the Steam Frame
 
 1. On the Steam Frame, switch to **Desktop Mode**.
 2. Download **`Install Minecraft Tabletop.desktop`** from the assets below, with Firefox or Chromium.
@@ -23,7 +23,7 @@ curl -fsSL https://github.com/@REPO@/releases/latest/download/install-steam-fram
 ```
 
 Everything goes into `~/.local/share/minecraft-tabletop`, with its own Prism Launcher, so other Minecraft installs aren't
-changed. It also downloads Prism Launcher, Fabric API and Sodium from their official sources.
+changed. The installer downloads Prism Launcher, Fabric API and Sodium from their official sources.
 
 ## Playing
 
@@ -33,11 +33,34 @@ changed. It also downloads Prism Launcher, Fabric API and Sodium from their offi
   table.
 - The left stick still walks your player, the world scrolls along when you get close to the edge.
 - VR Settings has a **Tabletop** page for the size and the number of chunks shown.
-- In multiplayer, tabletop reach needs `tabletopAllowed = true` in the server's `vivecraft-server-config.toml`.
+
+## Install it yourself
+
+`@JAR@` is the whole mod, for Minecraft @MINECRAFT@ with Fabric Loader (Java 25). It works with any Fabric launcher, on
+the Steam Frame and on PC VR.
+
+- Sodium 0.9 for @MINECRAFT@ is recommended for performance. Fabric API isn't needed, but works alongside.
+- In VR Settings, choose **OpenXR** as the VR runtime, it has the passthrough on the Steam Frame.
+- On the Steam Frame, use the **Vulkan** graphics backend (Video Settings) and about 80% resolution (VR Settings).
+- On PC, tabletop mode works with SteamVR and other OpenXR runtimes, but without passthrough you see the world's sky.
+- Add **Toggle Tabletop Mode** to the radial menu in VR Settings, it has no free slot by default.
+
+**Modrinth modpack:** `@MRPACK@` sets this up in one step, in Prism Launcher, the Modrinth App and other launchers that
+import Modrinth modpacks: Minecraft @MINECRAFT@, Fabric Loader @FABRIC_LOADER@, Sodium, Fabric API, this mod and the
+same Steam Frame settings as the installer. On PC, raise the resolution in VR Settings. Updating the modpack resets
+those preset settings.
+
+## Servers
+
+The same jar works on a Fabric server. Tabletop players get extra reach, so they can build anywhere on their table, in
+singleplayer and LAN worlds; a dedicated server allows it with `tabletopAllowed = true` in
+`config/vivecraft-server-config.toml`. Without it, tabletop players can only reach blocks next to their player.
 
 ## Update and uninstall
 
-Run the installer again to update, your worlds, settings and login are kept.
+Run the installer again to update, your worlds, settings and login are kept. If you installed it yourself, replace the
+jar. Vivecraft's own update notifications point to official versions, which don't have the tabletop mode.
+
 To uninstall, delete `~/.local/share/minecraft-tabletop` and remove "Minecraft Tabletop" from your Steam library.
 
 ## Known issues
@@ -45,5 +68,5 @@ To uninstall, delete `~/.local/share/minecraft-tabletop` and remove "Minecraft T
 - On the Steam Frame controllers, A and clicking the left stick both jump and place blocks.
 - Shader packs don't work in tabletop mode.
 
-Source: the [`tabletop-openxr`](https://github.com/@REPO@/tree/tabletop-openxr) branch, Vivecraft is licensed under
-LGPLv3.
+`SHA256SUMS` has the checksums of all files. Source: the
+[`tabletop-openxr`](https://github.com/@REPO@/tree/tabletop-openxr) branch, Vivecraft is licensed under LGPLv3.

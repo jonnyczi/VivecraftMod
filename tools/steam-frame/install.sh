@@ -143,23 +143,19 @@ install_mod "sodium-*.jar" "$DIR/downloads/$(file_name "$SODIUM_URL")"
 fetch_release_file "$VIVECRAFT_JAR" "$DIR/downloads/$VIVECRAFT_JAR" "$VIVECRAFT_SHA256"
 install_mod "vivecraft-*.jar" "$DIR/downloads/$VIVECRAFT_JAR"
 
-# settings for the Steam Frame, only on the first install, so changes in the game are kept
+# settings for the Steam Frame from tools/steam-frame/defaults, only on the first install, so changes in the game are
+# kept: OpenXR, which has passthrough, 80% resolution, which the Frame can render at full frame rate, the tabletop toggle
+# in the radial menu, which gets two more buttons for it so the default items stay, and the Vulkan backend, which works
+# best with OpenXR on the Frame
 if [ ! -f "$GAME/config/vivecraft-client-config.json" ]; then
-    # OpenXR, which has passthrough, 80% resolution, which the Frame can render at full frame rate, and the tabletop
-    # toggle in the radial menu, which gets two more buttons for it, so the default items stay
     cat >"$GAME/config/vivecraft-client-config.json" <<'EOF'
-{
-  "stereoProviderPluginID": "OPENXR",
-  "vrEnabled": "true",
-  "renderScaleFactor": "0.8",
-  "vrRadialButtons": "10",
-  "RADIAL_8": "vivecraft.key.toggleTabletop"
-}
+@VIVECRAFT_CONFIG@
 EOF
 fi
 if [ ! -f "$GAME/options.txt" ]; then
-    # the Vulkan backend works best with OpenXR on the Frame
-    printf '%s\n' 'preferredGraphicsBackend:"vulkan"' 'renderDistance:8' 'onboardAccessibility:false' >"$GAME/options.txt"
+    cat >"$GAME/options.txt" <<'EOF'
+@OPTIONS@
+EOF
 fi
 
 step "Steam library"

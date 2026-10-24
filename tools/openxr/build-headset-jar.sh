@@ -80,7 +80,8 @@ if [ "$COMMITTED" = false ]; then
     fix_names
 fi
 
-# 3. build
+# 3. build, without jars of other versions next to the new one
+rm -f "$XR_WORKTREE"/build/libs/*.jar
 "$MAIN/tools/nix-gradle.sh" -C "$XR_WORKTREE" :fabric:build --console=plain | grep -E "error:|BUILD" -A3
 ls -la "$XR_WORKTREE"/build/libs/*-fabric.jar
 if [ "$COMMITTED" = true ]; then
