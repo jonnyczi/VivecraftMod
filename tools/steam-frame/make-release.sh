@@ -101,7 +101,7 @@ fi
 chmod +x "$DIST/install-steam-frame.sh"
 
 # double clicked in desktop mode, always runs the installer of the latest release
-cat >"$DIST/Install Minecraft Tabletop.desktop" <<EOF
+cat >"$DIST/Install-Minecraft-Tabletop.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Install Minecraft Tabletop
@@ -161,7 +161,7 @@ if grep -n '@[A-Z_0-9]*@' "$DIST/release-notes.md"; then
     echo "placeholders left in the release notes" >&2
     exit 1
 fi
-(cd "$DIST" && sha256sum -- "$JAR" "$MRPACK" install-steam-frame.sh "Install Minecraft Tabletop.desktop" "$ICON" \
+(cd "$DIST" && sha256sum -- "$JAR" "$MRPACK" install-steam-frame.sh "Install-Minecraft-Tabletop.desktop" "$ICON" \
     >SHA256SUMS)
 echo "== $DIST"
 ls -la "$DIST"

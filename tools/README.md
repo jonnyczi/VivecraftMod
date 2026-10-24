@@ -46,7 +46,7 @@ release, the Frame settings and a Steam shortcut. Prism opens once for the Micro
   upstream's version for the pull requests).
 - `steam-frame/make-release.sh` builds the release files in `build/steam-frame-release`: the jar from the committed
   `tabletop-openxr` branch, `install-steam-frame.sh` with all versions and checksums filled in, the
-  `Install Minecraft Tabletop.desktop` file that players double click, a Modrinth modpack with the same mods and
+  `Install-Minecraft-Tabletop.desktop` file that players double click, a Modrinth modpack with the same mods and
   settings, the icon, `SHA256SUMS` and the release notes from `steam-frame/release-notes.md`.
 - `steam-frame/defaults/` has the Steam Frame settings that the installer and the modpack start with.
 - `steam-frame/install.sh` is the installer template. For testing it reads `INSTALL_DIR`, `SHORTCUT_NAME`, `ASSET_DIR`
